@@ -50,6 +50,12 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	findMatchesFromContext(cid, r.Form.Get("pattern"), int(maxi), w)
 }
 
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
 func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
 	log.Infof("Searching for %v in context %v", pattern, cid)
 	matches := fuzzy.Find(pattern, contexts[cid])
@@ -57,6 +63,7 @@ func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
 		max = len(matches)
 	}
 
+	max = min(len(matches), max)
 	arr := make([]string, max)
 	for i, m := range matches {
 		if i == len(arr) {
