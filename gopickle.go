@@ -12,6 +12,9 @@ import (
 
 var contexts map[string][]string
 
+func init() {
+	contexts = make(map[string][]string)
+}
 func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
 	log.Infof("Searching for %v in context %v", pattern, cid)
 	matches := fuzzy.Find(pattern, contexts[cid])
@@ -60,15 +63,6 @@ func findMatches(reader io.Reader, pattern string, max int, writer io.Writer) {
 }
 
 func main() {
-	http.HandleFunc("/hasContext", func(w http.ResponseWriter, r *http.Request) {
-		cid := r.Form.Get("cid")
-		_, ok := contexts[cid]
-		if !ok {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
-	})
 
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		file, _, fileerr := r.FormFile("data")
