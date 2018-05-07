@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hydrogen18/stalecucumber"
+  packages = ["."]
+  revision = "6de214d141dda4b540da196a19a68228f0c8323d"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -49,6 +55,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "beddedbf8dc562d2485d215d5f8fa4ee35b08fb46432689473229c49965c86c1"
+  inputs-digest = "3e2701e6e18b30c7950664ebe43ca1be9f24e147678374b441563b7e5290d9fc"
   solver-name = "gps-cdcl"
   solver-version = 1
