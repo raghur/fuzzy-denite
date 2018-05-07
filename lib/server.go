@@ -2,12 +2,13 @@ package lib
 
 import (
 	"fmt"
-	"github.com/hydrogen18/stalecucumber"
-	"github.com/sahilm/fuzzy"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/hydrogen18/stalecucumber"
+	"github.com/sahilm/fuzzy"
+	log "github.com/sirupsen/logrus"
 )
 
 var contexts map[string][]string
@@ -32,6 +33,7 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprintf("You did not pass data for context id %v", cid)))
 		return
 	}
+
 	if !ok {
 		data := make([]string, 0)
 		err := stalecucumber.UnpackInto(&data).From(stalecucumber.Unpickle(file))

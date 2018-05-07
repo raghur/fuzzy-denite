@@ -15,12 +15,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/sahilm/fuzzy"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/sahilm/fuzzy"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var pattern string
