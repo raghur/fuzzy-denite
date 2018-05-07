@@ -67,7 +67,8 @@ def send(args):
 
     """
     status, reason, content = post_multipart('localhost', "/",
-                                             {"pattern": args[0]},
+                                             {"pattern": args[0],
+                                             "max": "10"},
                                              {"data": args[1]})
     print(status, reason)
     m = pickle.loads(content)
