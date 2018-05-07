@@ -1,15 +1,11 @@
 package main
 
 import (
-	"io"
-	"os"
-
-	log "github.com/sirupsen/logrus"
-
-	"net/http"
-
 	"github.com/hydrogen18/stalecucumber"
 	"github.com/sahilm/fuzzy"
+	log "github.com/sirupsen/logrus"
+	"io"
+	"net/http"
 )
 
 func findMatches(reader io.Reader, pattern string, writer io.Writer) {
@@ -35,22 +31,6 @@ func main() {
 		file, _, _ := r.FormFile("data")
 		findMatches(file, r.Form.Get("pattern"), w)
 	})
-	log.Info("startign")
+	log.Info("starting")
 	http.ListenAndServe(":80", nil)
-	files := make([]string, 0)
-	reader, err := os.Open(os.Args[1])
-	if err != nil {
-		log.Fatal("could not read file %v, %e", os.Args[1], err)
-	}
-	err = stalecucumber.UnpackInto(&files).From(stalecucumber.Unpickle(reader))
-	log.Infof("length of array %v", len(files))
-
-	matches := fuzzy.Find("grrf", files)
-	log.Infof("number of matches: %v", len(matches))
-	of, _ := os.Create(os.Args[2])
-	p := stalecucumber.NewPickler(of)
-	p.Pickle(matches)
-	defer func() {
-		of.Close()
-	}()
 }
