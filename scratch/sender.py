@@ -66,21 +66,37 @@ def send(args):
     :returns: TODO
 
     """
-    status, reason, content = post_multipart('localhost', "/",
-                                             {"pattern": args[0],
-                                             "max": "10"},
-                                             {"data": args[1]})
-    print(status, reason)
-    m = pickle.loads(content)
-    print(m[0])
-    print(len(m))
+    try:
+        print(args)
+        while True:
+            qry = sys.stdin.readline().rstrip("\n")
+            status, reason, content = post_multipart('localhost', "/search",
+                                                     {"pattern": qry,
+                                                      "algo": args[0],
+                                                      "cid": "12345",
+                                                      "max": "10"},
+                                                     {})
+            if status == 400:
+                print("resending with data")
+                status, reason, content = post_multipart('localhost', "/search",
+                                                         {"pattern": qry,
+                                                          "cid": "12345",
+                                                          "algo": args[0],
+                                                          "max": "10"},
+                                                         {"data": args[1]})
+            print(status, reason)
+            m = pickle.loads(content)
+            print(len(m))
+            [print(i) for i in m]
+    except KeyboardInterrupt:
+        print("Exiting")
 
 
 if __name__ == "__main__":
     # print(sys.argv)
     if len(sys.argv) == 1:
         print("script.py [send|create]")
-        print("send args: pattern, filename")
+        print("send args: filename")
         print("create args: infile, outfile")
     elif sys.argv[1] == 'create':
         create(sys.argv[2:])

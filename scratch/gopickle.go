@@ -6,23 +6,21 @@ import (
 	"net/http"
 	"strconv"
 
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/hydrogen18/stalecucumber"
 	"github.com/sahilm/fuzzy"
+	"github.com/schollz/closestmatch"
 	log "github.com/sirupsen/logrus"
 )
 
-var contexts map[string][]string
+var contexts *lru.ARCCache
 
-func init() {
-	contexts = make(map[string][]string)
-}
-func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
-	log.Infof("Searching for %v in context %v", pattern, cid)
-	matches := fuzzy.Find(pattern, contexts[cid])
+func matchFuzzy(pattern string, context interface{}, max int) *[]string {
+	data := context.(*[]string)
+	matches := fuzzy.Find(pattern, *data)
 	if max == 0 {
 		max = len(matches)
 	}
-
 	arr := make([]string, max)
 	for i, m := range matches {
 		if i == len(arr) {
@@ -30,11 +28,41 @@ func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
 		}
 		arr[i] = m.Str
 	}
-	log.Debugf("number of matches: %v", len(matches))
-	log.Infof("Got %v items. %v matches for %v. Will return max: %v results", len(contexts[cid]), len(matches), pattern, max)
+	return &arr
+}
+
+func createContext(cid, algo string, data *[]string) {
+	switch algo {
+	case "fuzzy":
+		contexts.Add(cid, &data)
+	case "closestmatch":
+		log.Info("Creating closestmatch context ", cid)
+		bagSizes := []int{2, 3, 4, 5, 6, 7}
+		cm := closestmatch.New(*data, bagSizes)
+		contexts.Add(cid, cm)
+	}
+}
+func matchClosestMatch(pattern string, context interface{}, max int) *[]string {
+	cm := context.(*closestmatch.ClosestMatch)
+	matches := cm.ClosestN(pattern, max)
+	return &matches
+}
+func findMatchesFromContext(cid, pattern, algo string, max int, writer io.Writer) {
+	log.Infof("Searching for %v in context %v", pattern, cid)
+	var matches *[]string
+	ctx, _ := contexts.Get(cid)
+	switch algo {
+	case "fuzzy":
+		matches = matchFuzzy(pattern, ctx, max)
+	case "closestmatch":
+		matches = matchClosestMatch(pattern, ctx, max)
+	}
+
+	log.Debugf("number of matches: %v", len(*matches))
+	log.Infof("%v matches for %v. Will return max: %v results", len(*matches), pattern, max)
 
 	p := stalecucumber.NewPickler(writer)
-	p.Pickle(arr)
+	p.Pickle(*matches)
 }
 
 func findMatches(reader io.Reader, pattern string, max int, writer io.Writer) {
@@ -74,12 +102,16 @@ func main() {
 			w.Write([]byte("You must pass a cid param"))
 			return
 		}
-		_, ok := contexts[cid]
+		ok := contexts.Contains(cid)
 		if !ok && fileerr != nil {
 			log.Errorf("/search: Context %v does not exist and no data passed", cid)
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("You did not pass data for context id %v", cid)))
 			return
+		}
+		algo := r.Form.Get("algo")
+		if algo != "closestmatch" || algo != "fuzzy" {
+			algo = "closestmatch"
 		}
 		if !ok {
 			data := make([]string, 0)
@@ -88,7 +120,7 @@ func main() {
 				log.Errorf("Could not read pickled stream %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-			contexts[cid] = data
+			createContext(cid, algo, &data)
 			log.Infof("Created new context %v of size %v", cid, len(data))
 		}
 		max := r.Form.Get("max")
@@ -96,22 +128,22 @@ func main() {
 		if err != nil {
 			maxi = 0
 		}
-		findMatchesFromContext(cid, r.Form.Get("pattern"), int(maxi), w)
+		findMatchesFromContext(cid, r.Form.Get("pattern"), algo, int(maxi), w)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range r.Header {
-			log.Debugf("Header %v: %v", k, v)
-		}
-		file, _, _ := r.FormFile("data")
-		max := r.Form.Get("max")
-		maxi, err := strconv.ParseInt(max, 10, 0)
-		if err != nil {
-			maxi = 0
-		}
-		findMatches(file, r.Form.Get("pattern"), int(maxi), w)
-	})
-	contexts = make(map[string][]string)
+	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	for k, v := range r.Header {
+	// 		log.Debugf("Header %v: %v", k, v)
+	// 	}
+	// 	file, _, _ := r.FormFile("data")
+	// 	max := r.Form.Get("max")
+	// 	maxi, err := strconv.ParseInt(max, 10, 0)
+	// 	if err != nil {
+	// 		maxi = 0
+	// 	}
+	// 	findMatches(file, r.Form.Get("pattern"), int(maxi), w)
+	// })
+	contexts, _ = lru.NewARC(20)
 	log.Info("starting")
 	http.ListenAndServe(":80", nil)
 }

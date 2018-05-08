@@ -29,6 +29,12 @@
   version = "v0.0.4"
 
 [[projects]]
+  name = "github.com/schollz/closestmatch"
+  packages = ["."]
+  revision = "56fb6b15a5e88fbcbc21b196488e749fc176514c"
+  version = "v2.1.0"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
@@ -64,6 +70,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0fcca95a5cd0eff970e7a04c5a076c90257bd64d5fe4eb06c675466c40388771"
+  inputs-digest = "77b9993615c6b8c125bdce519e882892ca23946107636a9c4cffe324bfd30b33"
   solver-name = "gps-cdcl"
   solver-version = 1
