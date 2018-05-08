@@ -1,11 +1,26 @@
 == Fuzzy Denite
 
-Fuzzy find server and denite.nvim client.
+Go Fuzzy find server and denite.nvim custom matcher client.
+
+=== Installation
+
+Install binary with `go get -u github.com/raghur/fuzzy-denite`
+
+Then in your `.vimrc`:
+
+[source,vim]
+----
+Plug 'Shougo/denite.nvim'
+Plug 'raghur/fuzzy-denite'
+
+call denite#custom#source('_', 'matchers', ['matcher/gofuzzy'])
+----
 
 === Why
 
 I currently use `nixprime/cpsm` and while it's great, it's a pain to set up on 
 windows and Linux since the python extension has to be compiled separately.
+This isn't a problem on Linux - but on Windows - :O :O.
 
 I wanted to try my hand at writing something that works reasonably well and
 is comparatively easy to set up.
@@ -24,13 +39,22 @@ But, a few tweaks and I can't really tell the difference that much
 and the list to be filtered is sent only if the server doesn't already have it.
 . The list to be filtered is pickled and sent as binary to keep the python end fast.. though I admit
 that I didn't test with plain json. Similarly, the response is sent as a pickled python list. 
-There are other options like that use native C extensions like `ujson` but 
-I wanted the python end to be dependency free as much as possible so that installation is trivial.
+There are other options that use native C extensions like `ujson` but then we're back to painful
+installation process (esp. on Windows)
 . I use NeoMRU a lot - it has a limit of 1000 entries. Turning this down to 100 makes is more
 reasonable.
 
+
+=== Goals
+
+. Fast - no pause, no hiccups
+. Relevant matching - esp filenames/paths - right now, this isn't great, but a lot easier to improve
+. Easy installation - esp no pip dependencies on the python client.
+
 === TODOS
 
-. Try using FZF's fuzzy matching code.
+. Provide platform binaries so that users don't need GO SDK
+. Fix first run 'pause'
+. Explore using FZF's fuzzy matching code.
 
 
