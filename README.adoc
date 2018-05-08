@@ -31,7 +31,6 @@ reasonable.
 
 === TODOS
 
-. Use a LRU cache
 . Try using FZF's fuzzy matching code.
 
 

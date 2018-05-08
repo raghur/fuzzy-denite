@@ -3,6 +3,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru"
+  ]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+
+[[projects]]
+  branch = "master"
   name = "github.com/hydrogen18/stalecucumber"
   packages = ["."]
   revision = "6de214d141dda4b540da196a19a68228f0c8323d"
@@ -55,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3e2701e6e18b30c7950664ebe43ca1be9f24e147678374b441563b7e5290d9fc"
+  inputs-digest = "0fcca95a5cd0eff970e7a04c5a076c90257bd64d5fe4eb06c675466c40388771"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -44,3 +44,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/hydrogen18/stalecucumber"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
