@@ -1,0 +1,37 @@
+== Fuzzy Denite
+
+Fuzzy find server and denite.nvim client.
+
+=== Why
+
+I currently use `nixprime/cpsm` and while it's great, it's a pain to set up on 
+windows and Linux since the python extension has to be compiled separately.
+
+I wanted to try my hand at writing something that works reasonably well and
+is comparatively easy to set up.
+
+=== How
+
+A special purpose, stateful HTTP server on localhost that listens for connections and
+responds with matches.
+
+=== Speed
+
+So you might be thinking that out of process, network api call vs C extension? So did I.
+But, a few tweaks and I can't really tell the difference that much
+
+. The list of things to be filtered is sent at best once. A hash is calculated on the client
+and the list to be filtered is sent only if the server doesn't already have it.
+. The list to be filtered is pickled and sent as binary to keep the python end fast.. though I admit
+that I didn't test with plain json. Similarly, the response is sent as a pickled python list. 
+There are other options like that use native C extensions like `ujson` but 
+I wanted the python end to be dependency free as much as possible so that installation is trivial.
+. I use NeoMRU a lot - it has a limit of 1000 entries. Turning this down to 100 makes is more
+reasonable.
+
+=== TODOS
+
+. Use a LRU cache
+. Try using FZF's fuzzy matching code.
+
+
