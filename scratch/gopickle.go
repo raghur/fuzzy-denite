@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/hydrogen18/stalecucumber"
-	"github.com/sahilm/fuzzy"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/hydrogen18/stalecucumber"
+	"github.com/sahilm/fuzzy"
+	log "github.com/sirupsen/logrus"
 )
 
 var contexts map[string][]string
