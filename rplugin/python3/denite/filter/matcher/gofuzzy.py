@@ -32,6 +32,8 @@ class Filter(Base):
             # start the server here
             self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
                                           'server'])
+            self.debug("started fuzzy-denite server. pid: %s"
+                               % self.proc.pid)
             self.conn = http.client.HTTPConnection("localhost:9009")
             self._initialized = True
 
@@ -39,9 +41,9 @@ class Filter(Base):
         status, reason, result = self._get_fuzzy_results(
             ispath, context['candidates'], context['input'])
         if result is not None:
-            logging.debug("2GREPME....")
-            logging.debug(len(result))
-            logging.debug(result)
+            # logging.debug("2GREPME....")
+            # logging.debug(len(result))
+            # logging.debug(result)
             return [x for x in context['candidates'] if x['word'] in result]
         else:
             self.error_message(context, "gofuzzy error: %s - %s" % (status, reason))
@@ -69,9 +71,15 @@ class Filter(Base):
             else:
                 m = pickle.loads(content)
                 return status, reason, m
+        except ConnectionResetError:
+            self.debug("ConnnectionResetError: will try restarting server")
+            self._initialized = False
+            return "ConnectionResetError", "ConnectionResetError", None
+        except ConnectionRefusedError:
+            self.debug("ConnectionRefusedError: will try restarting server")
+            self._initialized = False
+            return "ConnectionRefusedError", "ConnectionRefusedError", None
         except Exception:
-            # don't reuse old conn
-            self.conn = http.client.HTTPConnection("localhost:9009")
             raise
 
     def post_multipart(self, selector, fields, files):
