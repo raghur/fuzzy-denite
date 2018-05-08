@@ -13,6 +13,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	FUZZY = "fuzzy"
+	CM    = "closestmatch"
+)
+
 var contexts *lru.ARCCache
 
 func matchFuzzy(pattern string, context interface{}, max int) *[]string {
@@ -33,11 +38,11 @@ func matchFuzzy(pattern string, context interface{}, max int) *[]string {
 
 func createContext(cid, algo string, data *[]string) {
 	switch algo {
-	case "fuzzy":
+	case FUZZY:
 		contexts.Add(cid, &data)
-	case "closestmatch":
+	case CM:
 		log.Info("Creating closestmatch context ", cid)
-		bagSizes := []int{2, 3, 4, 5, 6, 7}
+		bagSizes := []int{2, 3, 4, 5, 7}
 		cm := closestmatch.New(*data, bagSizes)
 		contexts.Add(cid, cm)
 	}
@@ -52,9 +57,9 @@ func findMatchesFromContext(cid, pattern, algo string, max int, writer io.Writer
 	var matches *[]string
 	ctx, _ := contexts.Get(cid)
 	switch algo {
-	case "fuzzy":
+	case FUZZY:
 		matches = matchFuzzy(pattern, ctx, max)
-	case "closestmatch":
+	case CM:
 		matches = matchClosestMatch(pattern, ctx, max)
 	}
 
@@ -110,8 +115,8 @@ func main() {
 			return
 		}
 		algo := r.Form.Get("algo")
-		if algo != "closestmatch" || algo != "fuzzy" {
-			algo = "closestmatch"
+		if algo != CM || algo != FUZZY {
+			algo = CM
 		}
 		if !ok {
 			data := make([]string, 0)
