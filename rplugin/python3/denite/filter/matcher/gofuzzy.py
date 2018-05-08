@@ -6,9 +6,9 @@ import uuid
 import pickle
 import hashlib
 import subprocess
+import time
 logger = logging.getLogger()
 logger.setLevel(logging.getLevelName("DEBUG"))
-
 
 class Filter(Base):
 
@@ -22,20 +22,24 @@ class Filter(Base):
         self._disabled = False
         self.proc = None
         self.conn = http.client.HTTPConnection("localhost:9009")
+        self.debug("[%s] Loaded matcher/gofuzzy" % time.time())
+
+    def _startProcess(self):
+        if not self._initialized:
+            # start the server here
+            self.debug("[%s] starting fuzzy-denite server" % (time.time()))
+            self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
+                                          'server'])
+            self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
+            self.conn = http.client.HTTPConnection("localhost:9009")
+            self._initialized = True
 
     def filter(self, context):
         if not context['candidates'] or not context[
                 'input'] or self._disabled:
             return context['candidates']
 
-        if not self._initialized:
-            # start the server here
-            self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
-                                          'server'])
-            self.debug("started fuzzy-denite server. pid: %s"
-                               % self.proc.pid)
-            self.conn = http.client.HTTPConnection("localhost:9009")
-            self._initialized = True
+        self._startProcess()
 
         ispath = (os.path.exists(context['candidates'][0]['word']))
         status, reason, result = self._get_fuzzy_results(
@@ -46,6 +50,9 @@ class Filter(Base):
             # logging.debug(result)
             return [x for x in context['candidates'] if x['word'] in result]
         else:
+            # just return the current list as is.. if this is due to 
+            # the server not running, then when the user types the next
+            # chars, the server will be started
             self.error_message(context, "gofuzzy error: %s - %s" % (status, reason))
             return [x for x in context['candidates']]
 
@@ -55,6 +62,7 @@ class Filter(Base):
         md5sum = hashlib.md5("".join(items).encode("utf8")).hexdigest()
 
         try:
+            # just send cid & let server tell us if data is not available.
             status, reason, content = self.post_multipart("/search",
                                                           {"cid": md5sum,
                                                            "pattern": pattern,
@@ -66,6 +74,7 @@ class Filter(Base):
                                                                "pattern": pattern,
                                                                "max": "100"},
                                                               {"data": items})
+
             if status != 200:
                 return status, reason, None
             else:
