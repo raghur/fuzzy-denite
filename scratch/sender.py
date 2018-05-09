@@ -7,6 +7,9 @@ import binascii
 import io
 import os
 import pickle
+from asciimatics.screen import Screen, KeyboardEvent
+import time
+import itertools
 
 
 def post_multipart(host, selector, fields, files):
@@ -59,6 +62,24 @@ def create(args):
     pickle.dump(file=f, protocol=2, obj=l)
     f.close()
 
+def make_request(qry, algo, file):
+    status, reason, content = post_multipart('localhost', "/search",
+                                             {"pattern": qry,
+                                              "algo": algo,
+                                              "cid": "12345",
+                                              "max": "10"},
+                                             {})
+    if status == 400:
+        print("resending with data")
+        status, reason, content = post_multipart('localhost', "/search",
+                                                 {"pattern": qry,
+                                                  "cid": "12345",
+                                                  "algo": algo,
+                                                  "max": "10"},
+                                                 {"data": file})
+    m = pickle.loads(content)
+    return status, reason, m
+
 def send(args):
     """TODO: Docstring for main.
 
@@ -66,30 +87,52 @@ def send(args):
     :returns: TODO
 
     """
+    algo = args[0]
+    file = args[1]
     try:
         print(args)
         while True:
             qry = sys.stdin.readline().rstrip("\n")
-            status, reason, content = post_multipart('localhost', "/search",
-                                                     {"pattern": qry,
-                                                      "algo": args[0],
-                                                      "cid": "12345",
-                                                      "max": "10"},
-                                                     {})
-            if status == 400:
-                print("resending with data")
-                status, reason, content = post_multipart('localhost', "/search",
-                                                         {"pattern": qry,
-                                                          "cid": "12345",
-                                                          "algo": args[0],
-                                                          "max": "10"},
-                                                         {"data": args[1]})
+            status, reason, m = make_request(qry, algo, file)
             print(status, reason)
-            m = pickle.loads(content)
-            print(len(m))
-            [print(i) for i in m]
+            for idx, val in enumerate(m):
+                print(idx, val)
+            if len(m) == 1:
+                print(type(m[0]))
     except KeyboardInterrupt:
         print("Exiting")
+
+
+
+def render(screen, qry, matches):
+    screen.clear()
+    screen.print_at('your input: %s' % qry, 0, 0)
+    if matches:
+        for idx, val in enumerate(matches):
+            screen.print_at(val, 0, idx + 1)
+    screen.refresh()
+
+def demo(screen, algo, file):
+    qry=""
+    render(screen, qry, None)
+    while True:
+        ev = screen.get_event()
+        if isinstance(ev, KeyboardEvent):
+            if ev.key_code == Screen.KEY_ESCAPE:
+                return
+            if ev.key_code == Screen.KEY_BACK:
+                qry = qry[:-1]
+            else:
+                ch = chr(ev.key_code)
+                qry += ch
+            status, reason, matches = make_request(qry, algo, file )
+            render(screen, qry, matches)
+            time.sleep(0.01)
+
+def draw(args):
+    algo = args[0]
+    file = args[1]
+    Screen.wrapper(demo, arguments=(algo, file))
 
 
 if __name__ == "__main__":
@@ -102,6 +145,8 @@ if __name__ == "__main__":
         create(sys.argv[2:])
     elif sys.argv[1] == 'send':
         send(sys.argv[2:])
+    elif sys.argv[1] == "tui":
+        draw(sys.argv[2:])
     else:
         print("unknown arg")
 
