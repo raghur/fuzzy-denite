@@ -7,8 +7,11 @@ import pickle
 import hashlib
 import subprocess
 import time
+
 logger = logging.getLogger()
-logger.setLevel(logging.getLevelName("DEBUG"))
+level = os.environ.get("NVIM_PYTHON_LOG_LEVEL", "WARNING")
+logger.setLevel(logging.getLevelName(level))
+
 
 class Filter(Base):
 
