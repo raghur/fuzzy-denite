@@ -25,8 +25,8 @@
 [[projects]]
   name = "github.com/sahilm/fuzzy"
   packages = ["."]
-  revision = "94492734e8e55ca8e4152e3b0f7c4af24b54392c"
-  version = "v0.0.4"
+  revision = "df93d96a0fd86b97655b90f63c70802b4e793afb"
+  version = "v0.0.5"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -50,7 +50,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "4ec37c66abab2c7e02ae775328b2ff001c3f025a"
+  revision = "2d027ae1dddd4694d54f7a8b6cbe78dca8720226"
 
 [[projects]]
   branch = "master"
@@ -59,11 +59,11 @@
     "unix",
     "windows"
   ]
-  revision = "6f686a352de66814cdd080d970febae7767857a3"
+  revision = "64746a42f36bf0832f86b76004f1699dbeb33e4f"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0fcca95a5cd0eff970e7a04c5a076c90257bd64d5fe4eb06c675466c40388771"
+  inputs-digest = "d709295ba50ccc6b45d8144dcbf76fdeeae057aff405e009a1691ec332889733"
   solver-name = "gps-cdcl"
   solver-version = 1
