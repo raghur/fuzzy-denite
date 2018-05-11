@@ -1,6 +1,9 @@
 version: '2'
 
 tasks:
+  dev:
+    cmds:
+      - pip install --user grpcio grpcio-tools
   gen:
     cmds:
       - protoc -I . api.proto --go_out=plugins=grpc:lib
