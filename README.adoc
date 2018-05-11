@@ -27,7 +27,7 @@ is comparatively easy to set up.
 
 === How
 
-A special purpose, stateful HTTP server on localhost that listens for connections and
+A special purpose, stateful server on localhost that listens for connections and
 responds with matches.
 
 === Speed
@@ -37,13 +37,11 @@ But, a few tweaks and I can't really tell the difference that much
 
 . The list of things to be filtered is sent at best once. A hash is calculated on the client
 and the list to be filtered is sent only if the server doesn't already have it.
-. The list to be filtered is pickled and sent as binary to keep the python end fast.. though I admit
-that I didn't test with plain json. Similarly, the response is sent as a pickled python list. 
-There are other options that use native C extensions like `ujson` but then we're back to painful
-installation process (esp. on Windows)
+. GRPC for comms - much faster than pickling or HTTP. It makes installation of the plugin a 
+little more involved since `pip` has to be run on installation but the it's worth the trouble 
+for the speed up and no lag experience
 . I use NeoMRU a lot - it has a limit of 1000 entries. Turning this down to 100 makes is more
 reasonable.
-
 
 === Goals
 
