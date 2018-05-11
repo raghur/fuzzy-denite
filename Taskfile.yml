@@ -1,0 +1,13 @@
+version: '2'
+
+tasks:
+  gen:
+    cmds:
+      - protoc -I . api.proto --go_out=plugins=grpc:lib
+      - python -m grpc_tools.protoc -I. --python_out=rplugin/python3/denite/filter/matcher --grpc_python_out=rplugin/python3/denite/filter/matcher api.proto
+      - cp rplugin/python3/denite/filter/matcher/api_* scratch
+      - sed -i 's/import api_pb2 as api__pb2/from . import api_pb2 as api__pb2/' rplugin/python3/denite/filter/matcher/api_pb2_grpc.py
+  build:
+    deps: [gen]
+    cmds:
+      - go build -v

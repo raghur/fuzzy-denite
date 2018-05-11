@@ -7,6 +7,9 @@ import pickle
 import hashlib
 import subprocess
 import time
+import grpc
+from . import api_pb2
+from . import api_pb2_grpc
 
 logger = logging.getLogger()
 level = os.environ.get("NVIM_PYTHON_LOG_LEVEL", "WARNING")
@@ -30,11 +33,12 @@ class Filter(Base):
     def _startProcess(self):
         if not self._initialized:
             # start the server here
-            self.debug("[%s] starting fuzzy-denite server" % (time.time()))
+            self.debug("[%s] starting fuzzy-denite GRPC server" % (time.time()))
             self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
-                                          'server'])
+                                          'server', '-p', '51000', '--grpc'])
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
-            self.conn = http.client.HTTPConnection("localhost:9009")
+            self.conn = grpc.insecure_channel('localhost:51000')
+            self.service = api_pb2_grpc.FuzzyStub(self.conn)
             self._initialized = True
 
     def filter(self, context):
@@ -66,24 +70,28 @@ class Filter(Base):
 
         try:
             # just send cid & let server tell us if data is not available.
-            status, reason, content = self.post_multipart("/search",
-                                                          {"cid": md5sum,
-                                                           "pattern": pattern,
-                                                           "max": "100"},
-                                                          {})
-            if status == 400:
-                status, reason, content = self.post_multipart("/search",
-                                                              {"cid": md5sum,
-                                                               "pattern": pattern,
-                                                               "max": "100"},
-                                                              {"data": items})
+            reply = self.service.Match(
+                                    api_pb2.FuzzyRequest(
+                                        cid=md5sum,
+                                        qry=pattern,
+                                        max=20,
+                                        algo="fuzzy",
+                                        data=[]))
+            if reply.code == 400:
+                reply = self.service.Match(
+                                    api_pb2.FuzzyRequest(
+                                        cid=md5sum,
+                                        qry=pattern,
+                                        max=20,
+                                        algo="fuzzy",
+                                        data=items))
 
-            if status != 200:
-                return status, reason, None
+            if reply.code != 200:
+                return reply.code, reply.msg, None
             else:
-                m = pickle.loads(content)
-                return status, reason, m
-        except ConnectionResetError:
+                return reply.code, reply.msg, reply.match
+        except ConnectionResetError as cex:
+            self.debug(cex)
             self.debug("ConnnectionResetError: will try restarting server")
             self._initialized = False
             return "ConnectionResetError", "ConnectionResetError", None

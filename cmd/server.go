@@ -14,6 +14,7 @@
 package cmd
 
 import (
+	"net"
 	"net/http"
 
 	"github.com/raghur/fuzzy-denite/lib"
@@ -21,18 +22,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var contexts map[string][]string
 var port string
 var size int
+var usegrpc bool
 
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start in server mode on the specified port",
 	Run: func(cmd *cobra.Command, args []string) {
-		lib.CreateServer(size)
-		log.Infof("starting on %s", port)
-		http.ListenAndServe("localhost:"+port, nil)
+		if !usegrpc {
+			lib.CreateServer(size)
+			log.Infof("starting on %s", port)
+			http.ListenAndServe("localhost:"+port, nil)
+		} else {
+			lis, err := net.Listen("tcp", ":"+port)
+			if err != nil {
+				log.Fatalf("failed to listen: %v", err)
+			}
+			svr := lib.CreateGRPCServer(20)
+			log.Infof("starting GRPC on %s", port)
+			if err := svr.Serve(lis); err != nil {
+				log.Fatalf("failed to serve: %v", err)
+			}
+		}
 	},
 }
 
@@ -49,4 +62,5 @@ func init() {
 	// is called directly, e.g.:
 	serverCmd.Flags().StringVarP(&port, "port", "p", "9009", "port to run the server on")
 	serverCmd.Flags().IntVarP(&size, "size", "s", 20, "Size of the cache")
+	serverCmd.Flags().BoolVar(&usegrpc, "grpc", false, "Use a grpc server")
 }

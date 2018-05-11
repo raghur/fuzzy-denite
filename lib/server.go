@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -10,13 +9,55 @@ import (
 	"github.com/hydrogen18/stalecucumber"
 	"github.com/sahilm/fuzzy"
 	log "github.com/sirupsen/logrus"
+	context "golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var contexts *lru.ARCCache
 
+type server struct{}
+
+func CreateGRPCServer(cacheSize int) *grpc.Server {
+	contexts, _ = lru.NewARC(cacheSize)
+	s := grpc.NewServer()
+	RegisterFuzzyServer(s, &server{})
+	reflection.Register(s)
+	return s
+}
 func CreateServer(cacheSize int) {
 	contexts, _ = lru.NewARC(cacheSize)
 	http.HandleFunc("/search", search)
+}
+func (s *server) Match(ctx context.Context, req *FuzzyRequest) (*FuzzyReply, error) {
+	cid := req.GetCid()
+	if cid == "" {
+		log.Errorf("Cid not supplied.")
+		return &FuzzyReply{
+			Code:  400,
+			Msg:   "Cid not supplied.",
+			Match: []string{},
+		}, nil
+	}
+	ok := contexts.Contains(cid)
+	if !ok {
+		data := req.GetData()
+		if len(data) == 0 {
+			log.Errorf("Context does not exist and data not supplied.")
+			return &FuzzyReply{
+				Code:  400,
+				Msg:   "Context does not exist and data not supplied.",
+				Match: []string{},
+			}, nil
+		}
+		contexts.Add(cid, data)
+	}
+	matches := findMatchesFromContext(cid, req.GetQry(), int(req.GetMax()))
+	return &FuzzyReply{
+		Code:  200,
+		Msg:   "Ok",
+		Match: *matches,
+	}, nil
 }
 
 func search(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +92,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		maxi = 0
 	}
-	findMatchesFromContext(cid, r.Form.Get("pattern"), int(maxi), w)
+	matches := findMatchesFromContext(cid, r.Form.Get("pattern"), int(maxi))
+	p := stalecucumber.NewPickler(w)
+	p.Pickle(matches)
 }
 
 func min(x, y int) int {
@@ -60,8 +103,7 @@ func min(x, y int) int {
 	}
 	return y
 }
-func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
-	log.Infof("Searching for %v in context %v", pattern, cid)
+func findMatchesFromContext(cid, pattern string, max int) *[]string {
 	v, _ := contexts.Get(cid)
 	data := v.([]string)
 
@@ -79,8 +121,7 @@ func findMatchesFromContext(cid, pattern string, max int, writer io.Writer) {
 		arr[i] = m.Str
 	}
 	log.Debugf("number of matches: %v", len(matches))
-	log.Infof("Got %v items. %v matches for %v. Will return max: %v results", len(data), len(matches), pattern, max)
+	log.Infof("[%v] Size=%v, qry=%v, matches=%v, max=%v", cid, len(data), pattern, len(matches), max)
+	return &arr
 
-	p := stalecucumber.NewPickler(writer)
-	p.Pickle(arr)
 }

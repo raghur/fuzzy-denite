@@ -1,0 +1,23 @@
+syntax = "proto3";
+package lib;
+// The fuzzy match service definition.
+service Fuzzy {
+  // Sends a greeting
+  rpc Match (FuzzyRequest) returns (FuzzyReply) {}
+}
+
+// The request message containing the user's name.
+message FuzzyRequest {
+  string qry = 1;
+  string cid = 2;
+  string algo = 3;
+  int32 max = 4;
+  repeated string data=5;
+}
+
+// The response message containing the greetings
+message FuzzyReply {
+  int32 code=1;
+  string msg=2;
+  repeated string match=3;
+}

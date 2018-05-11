@@ -1,5 +1,4 @@
 *.exe
 tags
 vendor/
-data.txt
 __pycache__/

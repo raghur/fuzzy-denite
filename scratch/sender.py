@@ -1,12 +1,12 @@
 import http.client
 import mimetypes
 import sys
-import codecs
 import uuid
-import binascii
-import io
 import os
 import pickle
+import grpc
+import api_pb2_grpc
+import api_pb2
 
 
 def post_multipart(host, selector, fields, files):
@@ -75,17 +75,32 @@ def send(args):
     print(m[0])
     print(len(m))
 
+def grpc_call(args):
+    channel = grpc.insecure_channel('localhost:' + args[0])
+    stub = api_pb2_grpc.FuzzyStub(channel)
+    l = open(args[2]).read().splitlines()[:1000]
+    resp = stub.Match(api_pb2.FuzzyRequest(
+        qry=args[1],
+        max=10,
+        algo="fuzzy",
+        cid="12345",
+        data=l
+    ))
+    print (resp.code, resp.msg, len(resp.match))
 
 if __name__ == "__main__":
     # print(sys.argv)
     if len(sys.argv) == 1:
-        print("script.py [send|create]")
+        print("script.py [send|create|grpc]")
         print("send args: pattern, filename")
         print("create args: infile, outfile")
+        print("grpc args: port pattern datafile")
     elif sys.argv[1] == 'create':
         create(sys.argv[2:])
     elif sys.argv[1] == 'send':
         send(sys.argv[2:])
+    elif sys.argv[1] == 'grpc':
+        grpc_call(sys.argv[2:])
     else:
         print("unknown arg")
 
