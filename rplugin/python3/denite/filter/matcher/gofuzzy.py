@@ -92,17 +92,10 @@ class Filter(Base):
                 return reply.code, reply.msg, None
             else:
                 return reply.code, reply.msg, reply.match
-        except ConnectionResetError as cex:
-            self.debug(cex)
-            self.debug("ConnnectionResetError: will try restarting server")
-            self._initialized = False
-            return "ConnectionResetError", "ConnectionResetError", None
-        except ConnectionRefusedError:
-            self.debug("ConnectionRefusedError: will try restarting server")
-            self._initialized = False
-            return "ConnectionRefusedError", "ConnectionRefusedError", None
-        except Exception:
-            raise
+        except Exception as ex:
+            self._initialized=False
+            self.debug("Exception in gofuzzy - \n %s" % ex)
+            return 200, "Ok", items
 
     def post_multipart(self, selector, fields, files):
         fields["Connection"] = "keep-alive"
