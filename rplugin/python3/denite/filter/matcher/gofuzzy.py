@@ -8,8 +8,10 @@ import hashlib
 import subprocess
 import time
 import grpc
-from . import api_pb2
-from . import api_pb2_grpc
+import sys
+sys.path.insert(1, os.path.dirname(__file__))
+import api_pb2
+import api_pb2_grpc
 
 logger = logging.getLogger()
 level = os.environ.get("NVIM_PYTHON_LOG_LEVEL", "WARNING")

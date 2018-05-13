@@ -162,8 +162,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Fuzzy service
-
+// FuzzyClient is the client API for Fuzzy service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type FuzzyClient interface {
 	// Sends a greeting
 	Match(ctx context.Context, in *FuzzyRequest, opts ...grpc.CallOption) (*FuzzyReply, error)
@@ -179,7 +180,7 @@ func NewFuzzyClient(cc *grpc.ClientConn) FuzzyClient {
 
 func (c *fuzzyClient) Match(ctx context.Context, in *FuzzyRequest, opts ...grpc.CallOption) (*FuzzyReply, error) {
 	out := new(FuzzyReply)
-	err := grpc.Invoke(ctx, "/lib.Fuzzy/Match", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/lib.Fuzzy/Match", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
