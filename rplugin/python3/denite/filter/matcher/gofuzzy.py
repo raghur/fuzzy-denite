@@ -1,21 +1,19 @@
 from ..base import Base
 import os
 import logging
-import http.client
-import uuid
-import pickle
 import hashlib
 import subprocess
 import time
 import grpc
 import sys
-sys.path.insert(1, os.path.dirname(__file__))
-import api_pb2
 import api_pb2_grpc
+import api_pb2
 
 logger = logging.getLogger()
 level = os.environ.get("NVIM_PYTHON_LOG_LEVEL", "WARNING")
 logger.setLevel(logging.getLevelName(level))
+logger.info("Loading fuzzy-denite")
+logger.debug("GOFUZZY sys.path is %s" % sys.path)
 
 
 class Filter(Base):
@@ -29,7 +27,6 @@ class Filter(Base):
         self._initialized = False
         self._disabled = False
         self.proc = None
-        self.conn = http.client.HTTPConnection("localhost:9009")
         self.debug("[%s] Loaded matcher/gofuzzy" % time.time())
 
     def _startProcess(self):
@@ -106,6 +103,6 @@ class Filter(Base):
                 return reply.code, reply.msg, reply.match
         except grpc.RpcError as ex:
             self._reapProcess()
-            self._initialized=False
+            self._initialized = False
             self.debug("Exception in gofuzzy - \n %s" % ex)
             return 200, "Ok", items
