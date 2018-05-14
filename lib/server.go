@@ -15,6 +15,8 @@ import (
 )
 
 var contexts *lru.ARCCache
+var Version = "unset"
+var Branch = "unset"
 
 type server struct{}
 
@@ -28,6 +30,14 @@ func CreateGRPCServer(cacheSize int) *grpc.Server {
 func CreateServer(cacheSize int) {
 	contexts, _ = lru.NewARC(cacheSize)
 	http.HandleFunc("/search", search)
+}
+
+func (s *server) Version(ctx context.Context, req *Empty) (*VersionReply, error) {
+	log.Infof("Returning server version %s@%s", Branch, Version)
+	return &VersionReply{
+		Sha:    Version,
+		Branch: Branch,
+	}, nil
 }
 func (s *server) Match(ctx context.Context, req *FuzzyRequest) (*FuzzyReply, error) {
 	cid := req.GetCid()

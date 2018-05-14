@@ -38,13 +38,14 @@ class Filter(Base):
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
             self.conn = grpc.insecure_channel('localhost:51000')
             self.service = api_pb2_grpc.FuzzyStub(self.conn)
+            reply = self.service.Version(api_pb2.Empty())
+            self.debug("server version is %s@%s"% (reply.branch, reply.sha))
             self._initialized = True
 
     def _reapProcess(self):
         if self.proc:
             exitcode = self.proc.poll()
             self.debug("Process exited with code %s" % exitcode)
-
 
     def filter(self, context):
 

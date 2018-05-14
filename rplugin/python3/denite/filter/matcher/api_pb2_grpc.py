@@ -19,6 +19,11 @@ class FuzzyStub(object):
         request_serializer=api__pb2.FuzzyRequest.SerializeToString,
         response_deserializer=api__pb2.FuzzyReply.FromString,
         )
+    self.Version = channel.unary_unary(
+        '/lib.Fuzzy/Version',
+        request_serializer=api__pb2.Empty.SerializeToString,
+        response_deserializer=api__pb2.VersionReply.FromString,
+        )
 
 
 class FuzzyServicer(object):
@@ -32,6 +37,13 @@ class FuzzyServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def Version(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_FuzzyServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -39,6 +51,11 @@ def add_FuzzyServicer_to_server(servicer, server):
           servicer.Match,
           request_deserializer=api__pb2.FuzzyRequest.FromString,
           response_serializer=api__pb2.FuzzyReply.SerializeToString,
+      ),
+      'Version': grpc.unary_unary_rpc_method_handler(
+          servicer.Version,
+          request_deserializer=api__pb2.Empty.FromString,
+          response_serializer=api__pb2.VersionReply.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

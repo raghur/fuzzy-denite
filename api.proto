@@ -4,6 +4,7 @@ package lib;
 service Fuzzy {
   // Sends a greeting
   rpc Match (FuzzyRequest) returns (FuzzyReply) {}
+  rpc Version(Empty) returns (VersionReply) {}
 }
 
 // The request message containing the user's name.
@@ -20,4 +21,11 @@ message FuzzyReply {
   int32 code=1;
   string msg=2;
   repeated string match=3;
+}
+
+message Empty {}
+
+message VersionReply {
+  string sha=1;
+  string branch=2;
 }

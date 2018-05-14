@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='api.proto',
   package='lib',
   syntax='proto3',
-  serialized_pb=_b('\n\tapi.proto\x12\x03lib\"Q\n\x0c\x46uzzyRequest\x12\x0b\n\x03qry\x18\x01 \x01(\t\x12\x0b\n\x03\x63id\x18\x02 \x01(\t\x12\x0c\n\x04\x61lgo\x18\x03 \x01(\t\x12\x0b\n\x03max\x18\x04 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x05 \x03(\t\"6\n\nFuzzyReply\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12\r\n\x05match\x18\x03 \x03(\t26\n\x05\x46uzzy\x12-\n\x05Match\x12\x11.lib.FuzzyRequest\x1a\x0f.lib.FuzzyReply\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\tapi.proto\x12\x03lib\"Q\n\x0c\x46uzzyRequest\x12\x0b\n\x03qry\x18\x01 \x01(\t\x12\x0b\n\x03\x63id\x18\x02 \x01(\t\x12\x0c\n\x04\x61lgo\x18\x03 \x01(\t\x12\x0b\n\x03max\x18\x04 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x05 \x03(\t\"6\n\nFuzzyReply\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\x12\r\n\x05match\x18\x03 \x03(\t\"\x07\n\x05\x45mpty\"+\n\x0cVersionReply\x12\x0b\n\x03sha\x18\x01 \x01(\t\x12\x0e\n\x06\x62ranch\x18\x02 \x01(\t2b\n\x05\x46uzzy\x12-\n\x05Match\x12\x11.lib.FuzzyRequest\x1a\x0f.lib.FuzzyReply\"\x00\x12*\n\x07Version\x12\n.lib.Empty\x1a\x11.lib.VersionReply\"\x00\x62\x06proto3')
 )
 
 
@@ -128,8 +128,72 @@ _FUZZYREPLY = _descriptor.Descriptor(
   serialized_end=155,
 )
 
+
+_EMPTY = _descriptor.Descriptor(
+  name='Empty',
+  full_name='lib.Empty',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=157,
+  serialized_end=164,
+)
+
+
+_VERSIONREPLY = _descriptor.Descriptor(
+  name='VersionReply',
+  full_name='lib.VersionReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='sha', full_name='lib.VersionReply.sha', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='branch', full_name='lib.VersionReply.branch', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=166,
+  serialized_end=209,
+)
+
 DESCRIPTOR.message_types_by_name['FuzzyRequest'] = _FUZZYREQUEST
 DESCRIPTOR.message_types_by_name['FuzzyReply'] = _FUZZYREPLY
+DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['VersionReply'] = _VERSIONREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 FuzzyRequest = _reflection.GeneratedProtocolMessageType('FuzzyRequest', (_message.Message,), dict(
@@ -146,6 +210,20 @@ FuzzyReply = _reflection.GeneratedProtocolMessageType('FuzzyReply', (_message.Me
   ))
 _sym_db.RegisterMessage(FuzzyReply)
 
+Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), dict(
+  DESCRIPTOR = _EMPTY,
+  __module__ = 'api_pb2'
+  # @@protoc_insertion_point(class_scope:lib.Empty)
+  ))
+_sym_db.RegisterMessage(Empty)
+
+VersionReply = _reflection.GeneratedProtocolMessageType('VersionReply', (_message.Message,), dict(
+  DESCRIPTOR = _VERSIONREPLY,
+  __module__ = 'api_pb2'
+  # @@protoc_insertion_point(class_scope:lib.VersionReply)
+  ))
+_sym_db.RegisterMessage(VersionReply)
+
 
 
 _FUZZY = _descriptor.ServiceDescriptor(
@@ -154,8 +232,8 @@ _FUZZY = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=157,
-  serialized_end=211,
+  serialized_start=211,
+  serialized_end=309,
   methods=[
   _descriptor.MethodDescriptor(
     name='Match',
@@ -164,6 +242,15 @@ _FUZZY = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_FUZZYREQUEST,
     output_type=_FUZZYREPLY,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Version',
+    full_name='lib.Fuzzy.Version',
+    index=1,
+    containing_service=None,
+    input_type=_EMPTY,
+    output_type=_VERSIONREPLY,
     options=None,
   ),
 ])

@@ -19,12 +19,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/raghur/fuzzy-denite/lib"
 )
 
 var logLevel string
 var version bool
-var Branch string
-var Version string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -40,7 +40,7 @@ to quickly create a Cobra application.`,
 	// has an action associated with it:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if version {
-			fmt.Println(fmt.Sprintf("Built on branch %s @ %s", Branch, Version))
+			fmt.Println(fmt.Sprintf("Built on branch %s @ %s", lib.Branch, lib.Version))
 			return nil
 		}
 		return fmt.Errorf("No subcommand specified")
@@ -54,7 +54,7 @@ to quickly create a Cobra application.`,
 		log.Debug("Setting log level to %v", lvl)
 		log.SetLevel(lvl)
 		// fmt.Println(fmt.Sprintf("Built on branch %s @ %s", Branch, Version))
-		log.Infof("Built on branch %s @ %s", Branch, Version)
+		log.Infof("Built on branch %s @ %s", lib.Branch, lib.Version)
 		return nil
 	},
 }

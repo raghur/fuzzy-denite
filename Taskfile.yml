@@ -5,6 +5,8 @@ vars:
     sh: git describe --match=NeVeRmAtCh --always --abbrev=7 --dirty
   GIT_BRANCH:
     sh: git rev-parse --abbrev-ref HEAD
+  PACKAGE: "github.com/raghur/fuzzy-denite"
+  LDFLAGS: "-ldflags=\"-X {{.PACKAGE}}/lib.Version={{.GIT_COMMIT}} -X {{.PACKAGE}}/lib.Branch={{.GIT_BRANCH}}\""
 tasks:
   dev:
     cmds:
@@ -18,10 +20,10 @@ tasks:
   build:
     deps: [gen]
     cmds:
-      - '{{if eq OS "windows"}}go build -o fuzzy-denite.exe -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" main.go{{else}}echo ""{{end}}'
-      - '{{if eq OS "linux"}}go build -o fuzzy-denite -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" main.go{{else}}echo ""{{end}}'
+      - '{{if eq OS "windows"}}go build -o fuzzy-denite.exe {{.LDFLAGS}} main.go{{else}}echo ""{{end}}'
+      - '{{if eq OS "linux"}}go build -o fuzzy-denite {{.LDFLAGS}} main.go{{else}}echo ""{{end}}'
   rel:
     deps: [gen]
     cmds:
-      - GOOS=windows GOARCH=amd64 go build -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" -o fuzzy-denite-win-amd64.exe main.go
-      - GOOS=linux GOARCH=amd64 go build -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" -o fuzzy-denite-linux-amd64 main.go
+      - GOOS=windows GOARCH=amd64 go build {{.LDFLAGS}} -o fuzzy-denite-win-amd64.exe main.go
+      - GOOS=linux GOARCH=amd64 go build {{.LDFLAGS}} -o fuzzy-denite-linux-amd64 main.go
