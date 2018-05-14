@@ -45,16 +45,22 @@ class Filter(Base):
 
     def _reapProcess(self):
         if self.proc:
-            exitcode = self.proc.returncode
+            exitcode = self.proc.poll()
             self.debug("Process exited with code %s" % exitcode)
 
 
     def filter(self, context):
+
         if not context['candidates'] or not context[
                 'input'] or self._disabled:
             return context['candidates']
 
         self._startProcess()
+
+        def getCandidate(s):
+            for i in context['candidates']:
+                if i['word'] == s:
+                    return i
 
         # ispath = (os.path.exists(context['candidates'][0]['word']))
         status, reason, result = self._get_fuzzy_results(
@@ -63,7 +69,7 @@ class Filter(Base):
             # logging.debug("2GREPME....")
             # logging.debug(len(result))
             # logging.debug(result)
-            return [x for x in context['candidates'] if x['word'] in result]
+            return [x for x in map(getCandidate, result)]
         else:
             # just return the current list as is.. if this is due to 
             # the server not running, then when the user types the next
@@ -98,7 +104,7 @@ class Filter(Base):
                 return reply.code, reply.msg, None
             else:
                 return reply.code, reply.msg, reply.match
-        except Exception as ex:
+        except grpc.RpcError as ex:
             self._reapProcess()
             self._initialized=False
             self.debug("Exception in gofuzzy - \n %s" % ex)
