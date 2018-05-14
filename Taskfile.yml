@@ -1,5 +1,10 @@
 version: '2'
 
+vars:
+  GIT_COMMIT:
+    sh: git describe --match=NeVeRmAtCh --always --abbrev=7 --dirty
+  GIT_BRANCH:
+    sh: git rev-parse --abbrev-ref HEAD
 tasks:
   dev:
     cmds:
@@ -10,8 +15,13 @@ tasks:
       - protoc -I . api.proto --go_out=plugins=grpc:lib
       - python3 -m grpc_tools.protoc -I. --python_out=rplugin/python3/denite/filter/matcher --grpc_python_out=rplugin/python3/denite/filter/matcher api.proto
       - cp rplugin/python3/denite/filter/matcher/api_* scratch
-      # - sed -i 's/import api_pb2 as api__pb2/from . import api_pb2 as api__pb2/' rplugin/python3/denite/filter/matcher/api_pb2_grpc.py
   build:
     deps: [gen]
     cmds:
-      - go build -v
+      - '{{if eq OS "windows"}}go build -o fuzzy-denite.exe -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" main.go{{else}}echo ""{{end}}'
+      - '{{if eq OS "linux"}}go build -o fuzzy-denite -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" main.go{{else}}echo ""{{end}}'
+  rel:
+    deps: [gen]
+    cmds:
+      - GOOS=windows GOARCH=amd64 go build -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" -o fuzzy-denite-win-amd64.exe main.go
+      - GOOS=linux GOARCH=amd64 go build -ldflags="-X main.Version={{.GIT_COMMIT}} -X main.Branch={{.GIT_BRANCH}}" -o fuzzy-denite-linux-amd64 main.go

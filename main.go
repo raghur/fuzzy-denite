@@ -13,8 +13,15 @@
 
 package main
 
-import "github.com/raghur/fuzzy-denite/cmd"
+import (
+	"github.com/raghur/fuzzy-denite/cmd"
+)
+
+var Version = "not set"
+var Branch = "not set"
 
 func main() {
+	cmd.Branch = Branch
+	cmd.Version = Version
 	cmd.Execute()
 }

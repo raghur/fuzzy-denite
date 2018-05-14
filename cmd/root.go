@@ -22,6 +22,9 @@ import (
 )
 
 var logLevel string
+var version bool
+var Branch string
+var Version string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -35,7 +38,13 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if version {
+			fmt.Println(fmt.Sprintf("Built on branch %s @ %s", Branch, Version))
+			return nil
+		}
+		return fmt.Errorf("No subcommand specified")
+	},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		lvl, err := log.ParseLevel(logLevel)
 		if err != nil {
@@ -44,6 +53,8 @@ to quickly create a Cobra application.`,
 		}
 		log.Debug("Setting log level to %v", lvl)
 		log.SetLevel(lvl)
+		// fmt.Println(fmt.Sprintf("Built on branch %s @ %s", Branch, Version))
+		log.Infof("Built on branch %s @ %s", Branch, Version)
 		return nil
 	},
 }
@@ -66,4 +77,5 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	RootCmd.Flags().BoolVarP(&version, "version", "v", false, "Print version and exit")
 }
