@@ -114,14 +114,12 @@ func findMatchesFromContext(cid, pattern string, max int) *[]string {
 
 	max = min(len(matches), max)
 	arr := make([]string, max)
-	for i, m := range matches {
-		if i == len(arr) {
-			break
-		}
-		arr[i] = m.Str
-	}
 	log.Debugf("number of matches: %v", len(matches))
 	log.Infof("[%v] Size=%v, qry=%v, matches=%v, max=%v", cid, len(data), pattern, len(matches), max)
+	for i, m := range matches[:max] {
+		arr[i] = m.Str
+		log.Debug(m.Str)
+	}
 	return &arr
 
 }
