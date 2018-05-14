@@ -34,9 +34,12 @@ class Filter(Base):
         self._disabled = False
         self.proc = None
         self.debug("[%s] Loaded matcher/gofuzzy" % time.time())
+        self.booted = False
 
     def _startProcess(self):
         if not self._initialized:
+            # reap any existing process
+            self._reapProcess()
             # start the server here
             self.debug("[%s] starting fuzzy-denite GRPC server" % (time.time()))
             self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
@@ -44,9 +47,12 @@ class Filter(Base):
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
             self.conn = grpc.insecure_channel('localhost:51000')
             self.service = api_pb2_grpc.FuzzyStub(self.conn)
-            reply = self.service.Version(api_pb2.Empty())
-            self.debug("server version is %s@%s"% (reply.branch, reply.sha))
             self._initialized = True
+            self.booted = False
+            time.sleep(1)
+            return True
+        else:
+            return False
 
     def _reapProcess(self):
         if self.proc:
@@ -58,8 +64,24 @@ class Filter(Base):
         if not context['candidates'] or not context[
                 'input'] or self._disabled:
             return context['candidates']
-
-        self._startProcess()
+        maxTries, current = 3, 0
+        lastEx = None
+        while not self.booted and current < maxTries:
+            current = current + 1
+            didStart = self._startProcess()
+            if didStart:
+                try:
+                    reply = self.service.Version(api_pb2.Empty())
+                    self.debug("startup attempt #%s server version is %s@%s" %
+                               (current, reply.branch, reply.sha))
+                    self.booted = True
+                except grpc.RpcError as ex:
+                    self.debug("Error calling version api; attempt #%s" %
+                               current)
+                    self._initialized = False
+                    lastEx = ex
+        if not self.booted:
+            raise lastEx
 
         def getCandidate(s):
             for i in context['candidates']:
@@ -109,7 +131,6 @@ class Filter(Base):
             else:
                 return reply.code, reply.msg, reply.match
         except grpc.RpcError as ex:
-            self._reapProcess()
             self._initialized = False
             self.debug("Exception in gofuzzy - \n %s" % ex)
             return 200, "Ok", items
