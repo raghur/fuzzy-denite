@@ -6,14 +6,20 @@ import subprocess
 import time
 import grpc
 import sys
-import api_pb2_grpc
-import api_pb2
 
 logger = logging.getLogger()
 level = os.environ.get("NVIM_PYTHON_LOG_LEVEL", "WARNING")
 logger.setLevel(logging.getLevelName(level))
 logger.info("Loading fuzzy-denite")
 logger.debug("GOFUZZY sys.path is %s" % sys.path)
+pkgPath = os.path.dirname(__file__).split(os.path.sep)[:-3]
+pkgPath = os.path.sep.join(pkgPath)
+if pkgPath not in sys.path:
+    logger.debug("added %s to sys.path" % pkgPath)
+    sys.path.insert(0, pkgPath)
+
+import api_pb2_grpc
+import api_pb2
 
 
 class Filter(Base):

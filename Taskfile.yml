@@ -15,8 +15,8 @@ tasks:
   gen:
     cmds:
       - protoc -I . api.proto --go_out=plugins=grpc:lib
-      - python3 -m grpc_tools.protoc -I. --python_out=rplugin/python3/denite/filter/matcher --grpc_python_out=rplugin/python3/denite/filter/matcher api.proto
-      - cp rplugin/python3/denite/filter/matcher/api_* scratch
+      - python3 -m grpc_tools.protoc -I. --python_out=rplugin/python3 --grpc_python_out=rplugin/python3/ api.proto
+      - cp rplugin/python3/api_* scratch
   build:
     deps: [gen]
     cmds:
