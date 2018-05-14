@@ -48,45 +48,47 @@ class Filter(Base):
             self.conn = grpc.insecure_channel('localhost:51000')
             self.service = api_pb2_grpc.FuzzyStub(self.conn)
             self._initialized = True
+
+            # force check on whether svc is callable
             self.booted = False
-            time.sleep(1)
-            return True
-        else:
-            return False
+            time.sleep(0.05)
 
     def _reapProcess(self):
         if self.proc:
             exitcode = self.proc.poll()
             self.debug("Process exited with code %s" % exitcode)
 
-    def filter(self, context):
-
-        if not context['candidates'] or not context[
-                'input'] or self._disabled:
-            return context['candidates']
+    def _verifyService(self):
         maxTries, current = 3, 0
         lastEx = None
         while not self.booted and current < maxTries:
             current = current + 1
-            didStart = self._startProcess()
-            if didStart:
-                try:
-                    reply = self.service.Version(api_pb2.Empty())
-                    self.debug("startup attempt #%s server version is %s@%s" %
-                               (current, reply.branch, reply.sha))
-                    self.booted = True
-                except grpc.RpcError as ex:
-                    self.debug("Error calling version api; attempt #%s" %
-                               current)
-                    self._initialized = False
-                    lastEx = ex
+            self._startProcess()
+            try:
+                reply = self.service.Version(api_pb2.Empty())
+                self.debug("startup attempt #%s server version is %s@%s" %
+                           (current, reply.branch, reply.sha))
+                self.booted = True
+            except grpc.RpcError as ex:
+                self.debug("Error calling version api; attempt #%s" %
+                           current)
+                self._initialized = False
+                lastEx = ex
         if not self.booted:
             raise lastEx
+
+    def filter(self, context):
 
         def getCandidate(s):
             for i in context['candidates']:
                 if i['word'] == s:
                     return i
+
+        if not context['candidates'] or not context[
+                'input'] or self._disabled:
+            return context['candidates']
+
+        self._verifyService()
 
         # ispath = (os.path.exists(context['candidates'][0]['word']))
         status, reason, result = self._get_fuzzy_results(
