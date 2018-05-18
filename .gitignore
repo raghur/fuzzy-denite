@@ -2,3 +2,4 @@
 tags
 vendor/
 __pycache__/
+fuzzy-denite-*
