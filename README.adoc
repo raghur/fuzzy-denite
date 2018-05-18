@@ -4,8 +4,6 @@ Go Fuzzy find server and denite.nvim custom matcher client.
 
 === Installation
 
-Install binary with `go get -u github.com/raghur/fuzzy-denite`
-
 Then in your `.vimrc`:
 
 [source,vim]
