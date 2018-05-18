@@ -17,7 +17,9 @@ pkgPath = os.path.sep.join(pkgPath)
 if pkgPath not in sys.path:
     logger.debug("added %s to sys.path" % pkgPath)
     sys.path.insert(0, pkgPath)
-
+binDir = os.path.dirname(__file__).split(os.path.sep)[:-5]
+binDir = binDir + ["bin", "fuzzy-denite"]
+exe = os.path.sep.join(binDir)
 import api_pb2_grpc
 import api_pb2
 
@@ -41,8 +43,9 @@ class Filter(Base):
             # reap any existing process
             self._reapProcess()
             # start the server here
-            self.debug("[%s] starting fuzzy-denite GRPC server" % (time.time()))
-            self.proc = subprocess.Popen(['fuzzy-denite', '--log', 'info',
+            self.debug("[%s] starting fuzzy-denite GRPC server %s " %
+                       (time.time(), exe))
+            self.proc = subprocess.Popen([exe, '--log', 'info',
                                           'server', '-p', '51000', '--grpc'])
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
             self.conn = grpc.insecure_channel('localhost:51000')
