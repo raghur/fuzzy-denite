@@ -76,7 +76,11 @@ def send(args):
     print(len(m))
 
 def grpc_call(args):
-    channel = grpc.insecure_channel('localhost:' + args[0])
+    print(args)
+    if sys.platform == 'linux':
+        channel = grpc.insecure_channel("unix:" + args[0])
+    else:
+        channel = grpc.insecure_channel('localhost:' + args[0])
     stub = api_pb2_grpc.FuzzyStub(channel)
     l = open(args[2]).read().splitlines()[:1000]
     resp = stub.Match(api_pb2.FuzzyRequest(

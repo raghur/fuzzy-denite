@@ -37,6 +37,14 @@ class Filter(Base):
         self.proc = None
         self.debug("[%s] Loaded matcher/gofuzzy" % time.time())
         self.booted = False
+        if sys.platform == 'linux':
+            self.proto = "unix"
+            self.port = "/tmp/fuzzy-denite-%s.sock" % os.getpid()
+            self.endpoint = self.proto + ":" + self.port
+        else:
+            self.proto = "tcp"
+            self.port = "51000"
+            self.endpoint = "localhost:" + self.port
 
     def _startProcess(self):
         if not self._initialized:
@@ -46,9 +54,10 @@ class Filter(Base):
             self.debug("[%s] starting fuzzy-denite GRPC server %s " %
                        (time.time(), exe))
             self.proc = subprocess.Popen([exe, '--log', 'info',
-                                          'server', '-p', '51000', '--grpc'])
+                                          'server', '-u', self.proto,
+                                          '-p', self.port, '--grpc'])
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
-            self.conn = grpc.insecure_channel('localhost:51000')
+            self.conn = grpc.insecure_channel(self.endpoint)
             self.service = api_pb2_grpc.FuzzyStub(self.conn)
             self._initialized = True
 

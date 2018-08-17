@@ -16,12 +16,17 @@ package cmd
 import (
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
 
 	"github.com/raghur/fuzzy-denite/lib"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+var proto string
 var port string
 var size int
 var usegrpc bool
@@ -36,15 +41,35 @@ var serverCmd = &cobra.Command{
 			log.Infof("starting on %s", port)
 			http.ListenAndServe("localhost:"+port, nil)
 		} else {
-			lis, err := net.Listen("tcp", ":"+port)
-			if err != nil {
-				log.Fatalf("failed to listen: %v", err)
+			var lis net.Listener
+			if runtime.GOOS == "windows" && proto == "unix" {
+				log.Fatalf("Cannot use unix domain sockets on windows")
 			}
-			svr := lib.CreateGRPCServer(20)
-			log.Infof("starting GRPC on %s", port)
+			if runtime.GOOS == "windows" && proto == "tcp" {
+				port = ":" + port
+			}
+			lis, err := net.Listen(proto, port)
+			if err != nil {
+				log.Fatalf("failed to listen on %s %s: %v", proto, port, err)
+			}
+
+			// install sigterm handler
+			sigc := make(chan os.Signal, 1)
+			signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
+			go func(ln net.Listener, c chan os.Signal) {
+				sig := <-c
+				log.Printf("Caught signal %s: shutting down.", sig)
+				ln.Close()
+				os.Exit(0)
+			}(lis, sigc)
+
+			// start GRPC
+			svr := lib.CreateGRPCServer(size)
+			log.Infof("starting GRPC on %s %s", proto, port)
 			if err := svr.Serve(lis); err != nil {
 				log.Fatalf("failed to serve: %v", err)
 			}
+
 		}
 	},
 }
@@ -60,7 +85,8 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	serverCmd.Flags().StringVarP(&port, "port", "p", "9009", "port to run the server on")
+	serverCmd.Flags().StringVarP(&proto, "proto", "u", DEFAULT_PROTO, "protocol to use. Unix domain sockets are better")
+	serverCmd.Flags().StringVarP(&port, "port", "p", DEFAULT_PORT, "port to run the server on")
 	serverCmd.Flags().IntVarP(&size, "size", "s", 20, "Size of the cache")
 	serverCmd.Flags().BoolVar(&usegrpc, "grpc", false, "Use a grpc server")
 }

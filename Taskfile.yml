@@ -20,10 +20,10 @@ tasks:
   build:
     deps: [gen]
     cmds:
-      - '{{if eq OS "windows"}}go build -o fuzzy-denite.exe {{.LDFLAGS}} main.go{{else}}echo ""{{end}}'
+      - '{{if eq OS "windows"}}go build -tags windows -o fuzzy-denite.exe {{.LDFLAGS}} main.go{{else}}echo ""{{end}}'
       - '{{if eq OS "linux"}}go build -o fuzzy-denite {{.LDFLAGS}} main.go{{else}}echo ""{{end}}'
   rel:
     deps: [gen]
     cmds:
-      - GOOS=windows GOARCH=amd64 go build {{.LDFLAGS}} -o fuzzy-denite-win-amd64.exe main.go
+      - GOOS=windows GOARCH=amd64 go build -tags windows {{.LDFLAGS}} -o fuzzy-denite-win-amd64.exe main.go
       - GOOS=linux GOARCH=amd64 go build {{.LDFLAGS}} -o fuzzy-denite-linux-amd64 main.go
