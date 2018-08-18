@@ -3,3 +3,7 @@ tags
 vendor/
 __pycache__/
 fuzzy-denite-*
+fuzzy-denite.h
+fuzzy-denite.so
+fuzzy-denite
+

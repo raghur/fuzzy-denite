@@ -8,6 +8,8 @@ import grpc
 import api_pb2_grpc
 import api_pb2
 
+from ctypes import *
+
 
 def post_multipart(host, selector, fields, files):
     headers, body = multipart_encoder(fields, files)
@@ -82,7 +84,7 @@ def grpc_call(args):
     else:
         channel = grpc.insecure_channel('localhost:' + args[0])
     stub = api_pb2_grpc.FuzzyStub(channel)
-    l = open(args[2]).read().splitlines()[:1000]
+    l = open(args[2]).read().splitlines()
     resp = stub.Match(api_pb2.FuzzyRequest(
         qry=args[1],
         max=10,
@@ -92,6 +94,43 @@ def grpc_call(args):
     ))
     print (resp.code, resp.msg, len(resp.match))
 
+
+class GoString(Structure):
+    _fields_ = [("p", c_char_p), ("n", c_longlong)]
+
+class GoSlice(Structure):
+    _fields_ = [("data", POINTER(c_void_p)), ("len", c_longlong), ("cap", c_longlong)]
+
+def array_from_goslice(rv, count):
+    l = []
+    for i in range(count):
+        # vptr = cast(r.data[i], POINTER(GoString))
+        vptr = cast(rv.data[i], c_char_p)
+        l.append(vptr.value)
+    return l
+
+def so_call(args):
+    maxresults = 10
+    print(args)
+    lib = cdll.LoadLibrary("../fuzzy-denite.so")
+    lib.FindMatches.argtypes = [GoSlice, GoString, c_longlong, GoSlice]
+    lib.FindMatches.restype = c_longlong
+
+    l = open(args[1]).read().splitlines()
+    data = GoSlice((c_void_p * len(l))(None), len(l), len(l))
+    for i, v in enumerate(l):
+        data.data[i] = cast(c_char_p(v.encode()), c_void_p)
+    pat = GoString(c_char_p(args[0].encode()), len(args[0]))
+    matches = GoSlice( (c_void_p * maxresults)(None), maxresults, maxresults )
+    c = lib.FindMatches(data, pat, maxresults, matches)
+
+    print ("Matches found: ", c)
+    results = array_from_goslice(matches, c)
+    print(results)
+
+
+
+
 if __name__ == "__main__":
     # print(sys.argv)
     if len(sys.argv) == 1:
@@ -99,12 +138,15 @@ if __name__ == "__main__":
         print("send args: pattern, filename")
         print("create args: infile, outfile")
         print("grpc args: port pattern datafile")
+        print("so args: pattern datafile")
     elif sys.argv[1] == 'create':
         create(sys.argv[2:])
     elif sys.argv[1] == 'send':
         send(sys.argv[2:])
     elif sys.argv[1] == 'grpc':
         grpc_call(sys.argv[2:])
+    elif sys.argv[1] == 'so':
+        so_call(sys.argv[2:])
     else:
         print("unknown arg")
 

@@ -27,3 +27,6 @@ tasks:
     cmds:
       - GOOS=windows GOARCH=amd64 go build -tags windows {{.LDFLAGS}} -o fuzzy-denite-win-amd64.exe main.go
       - GOOS=linux GOARCH=amd64 go build {{.LDFLAGS}} -o fuzzy-denite-linux-amd64 main.go
+  lib:
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -tags lib {{.LDFLAGS}} -o fuzzy-denite.so -buildmode=c-shared libmain.go
