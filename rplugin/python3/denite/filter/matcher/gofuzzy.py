@@ -53,9 +53,10 @@ class Filter(Base):
             # start the server here
             self.debug("[%s] starting fuzzy-denite GRPC server %s " %
                        (time.time(), exe))
-            self.proc = subprocess.Popen([exe, '--log', 'info',
-                                          'server', '-u', self.proto,
-                                          '-p', self.port, '--grpc'])
+            cmd = [exe, '--log', 'info', 'server', '-u', self.proto,
+                   '-p', self.port, '--grpc']
+            self.proc = subprocess.Popen(cmd)
+            self.debug("Launching server: " + " ".join(cmd))
             self.debug("[%s] pid: %s" % (time.time(), self.proc.pid))
             self.conn = grpc.insecure_channel(self.endpoint)
             self.service = api_pb2_grpc.FuzzyStub(self.conn)
