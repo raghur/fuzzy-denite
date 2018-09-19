@@ -5,9 +5,10 @@ import itertools
 def scorer(x):
     return len(x[0]) + 200 - x[2]  - x[3]
 
-def scoreMatches(matches):
+
+def scoreMatches(matches, limit):
     # return sorted(matches, key=lambda x: sum(x[1])/len(x[0]), reverse=True)
-    return sorted(matches, key=scorer, reverse=True)
+    return itertools.islice(sorted(matches, key=scorer, reverse=True), limit)
 
 
 def fuzzyMatches(query, candidates, limit):
@@ -19,6 +20,7 @@ def fuzzyMatches(query, candidates, limit):
     :returns: TODO
 
     """
+    findFirstN = False
     count = 0
     for x in candidates:
         pos = len(x)
@@ -37,7 +39,7 @@ def fuzzyMatches(query, candidates, limit):
         if isMatch:
             count = count + 1
             yield (x, matchPos, clusterScore, len(x) - matchPos[-1])
-            if count == limit:
+            if findFirstN and count == limit:
                 return
 
 
@@ -62,6 +64,6 @@ if __name__ == "__main__":
 
     with open(file) as fh:
         lines = (line.strip() for line in fh.readlines())
-        for x in scoreMatches(fuzzyMatches(query, lines, 10)):
+        for x in scoreMatches(fuzzyMatches(query, lines, 10), 10):
             print(x)
 
