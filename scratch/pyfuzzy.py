@@ -1,9 +1,23 @@
 import sys
 import itertools
 
+sep = '/\_.'
+
 
 def scorer(x):
-    return len(x[0]) + 200 - x[2]  - x[3]
+    # how close to the end of string as pct
+    position_boost = 100 * x[1][-1]/len(x[0])
+
+    # absolute value of how close it is to end
+    end_boost = 100 - x[3]
+
+    # how closely are matches clustered
+    cluster_boost = 100 - x[2]
+
+    # boost for matches after separators
+    # weighted by length of query
+    sep_boost = 100 * x[4]/len(x[1])
+    return position_boost + end_boost + cluster_boost + sep_boost
 
 
 def scoreMatches(matches, limit):
@@ -27,18 +41,21 @@ def fuzzyMatches(query, candidates, limit):
         isMatch = True
         matchPos = []
         clusterScore = 0
+        sepscore = 0
         for c in reversed(query):
             try:
                 pos = x.rindex(c, 0, pos)
                 matchPos.append(pos)
                 if len(matchPos) > 1:
                     clusterScore = clusterScore + (matchPos[-2] - pos - 1)
+                if x[pos - 1] in sep:
+                    sepscore = sepscore + 1
             except ValueError as v:
                 isMatch = False
                 break
         if isMatch:
             count = count + 1
-            yield (x, matchPos, clusterScore, len(x) - matchPos[-1])
+            yield (x, matchPos, clusterScore, len(x) - matchPos[-1], sepscore)
             if findFirstN and count == limit:
                 return
 
