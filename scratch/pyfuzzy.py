@@ -1,5 +1,6 @@
 import sys
-import itertools
+import functools
+import heapq
 
 sep = '/\_.'
 
@@ -12,17 +13,35 @@ def scorer(x):
     end_boost = 100 - x[3]
 
     # how closely are matches clustered
-    cluster_boost = 100 - x[2]
+    cluster_boost = 100 * (1 - x[2]/len(x[0]))
 
     # boost for matches after separators
     # weighted by length of query
-    sep_boost = 100 * x[4]/len(x[1])
+    sep_boost = 100 * x[4]/len(x[1]) * 0.5
     return position_boost + end_boost + cluster_boost + sep_boost
 
 
 def scoreMatches(matches, limit):
-    # return sorted(matches, key=lambda x: sum(x[1])/len(x[0]), reverse=True)
-    return itertools.islice(sorted(matches, key=scorer, reverse=True), limit)
+    return heapq.nlargest(limit, matches, key=scorer)
+
+
+def isMatch(query, candidate, left, right):
+    matchPos = []
+    d = "r"
+    for c in query:
+        if d == "r":
+            pos =  candidate.rfind(c, left, right)
+        else:
+            pos = candidate.find(c, left, right)
+        if pos == -1:
+            return (False, matchPos)
+        else:
+            matchPos.append(pos)
+            left = pos + 1
+            if d == "r":
+                d = "l"
+
+    return (True, matchPos)
 
 
 def fuzzyMatches(query, candidates, limit):
@@ -37,25 +56,24 @@ def fuzzyMatches(query, candidates, limit):
     findFirstN = False
     count = 0
     for x in candidates:
-        pos = len(x)
-        isMatch = True
-        matchPos = []
-        clusterScore = 0
-        sepscore = 0
-        for c in reversed(query):
-            try:
-                pos = x.rindex(c, 0, pos)
-                matchPos.append(pos)
-                if len(matchPos) > 1:
-                    clusterScore = clusterScore + (matchPos[-2] - pos - 1)
-                if x[pos - 1] in sep:
-                    sepscore = sepscore + 1
-            except ValueError as v:
-                isMatch = False
+        l,r = 0, len(x)
+        didMatch = False
+        positions = []
+        while not didMatch:
+            didMatch, positions = isMatch(query, x, l, r)
+            if not positions:
                 break
-        if isMatch:
+            r = positions[0]
+        if didMatch:
+            clusterScore = 0
+            for i, p in enumerate(positions):
+                if i > 0:
+                    clusterScore = positions[i] - positions[i-1] - 1
+            sepscore = functools.reduce(lambda x, y: x+y, 
+                                        map(lambda p: 1 if x[p - 1] in sep else
+                                            0, positions))
             count = count + 1
-            yield (x, matchPos, clusterScore, len(x) - matchPos[-1], sepscore)
+            yield (x, positions, clusterScore, len(x) - positions[0], sepscore)
             if findFirstN and count == limit:
                 return
 
