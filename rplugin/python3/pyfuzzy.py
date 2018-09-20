@@ -5,6 +5,10 @@ import heapq
 sep = '/\_.'
 
 
+def idfn(x):
+    return x
+
+
 def scorer(x, key):
     candidate = key(x[0])
     # print("item is", candidate)
@@ -23,8 +27,6 @@ def scorer(x, key):
 
 
 def scoreMatches(query, candidates, limit, key=None):
-    def idfn(x):
-        return x
     key = idfn if not key else key
     matches = fuzzyMatches(query, candidates, limit * 5, key)
     return heapq.nlargest(limit, matches, key=lambda x: scorer(x, key))
@@ -56,6 +58,8 @@ def isMatch(query, candidate, left, right):
     return (True, matchPos, clusterScore, len(candidate) - matchPos[0], sepScore)
 
 
+
+
 def fuzzyMatches(query, candidates, limit, key=None):
     """Find fuzzy matches among given candidates
 
@@ -65,8 +69,6 @@ def fuzzyMatches(query, candidates, limit, key=None):
     :returns: TODO
 
     """
-    def idfn(x):
-        return x
     key = idfn if not key else key
     findFirstN = True
     count = 0
