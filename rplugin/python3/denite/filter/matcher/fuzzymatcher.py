@@ -30,7 +30,7 @@ class Filter(Base):
         qry = context['input']
         results = scoreMatches(fuzzyMatches(qry, items, 10), 10)
         # self.debug("results %s" % results)
-        resultItems = [w[0] for w in results]
+        resultItems = set([w[0] for w in results])
         rset =  [c for c in candidates if c['word'] in resultItems]
         # self.debug("rset %s" % rset)
         return rset
