@@ -28,20 +28,25 @@ def scoreMatches(matches, limit):
 def isMatch(query, candidate, left, right):
     matchPos = []
     d = "r"
-    for c in query:
+    sepScore = 0
+    clusterScore = 0
+    for i, c in enumerate(query):
         if d == "r":
-            pos =  candidate.rfind(c, left, right)
+            pos = candidate.rfind(c, left, right - i)
         else:
             pos = candidate.find(c, left, right)
         if pos == -1:
             return (False, matchPos)
         else:
+            sepScore = sepScore + 1 if candidate[pos -1] in sep else sepScore
             matchPos.append(pos)
+            if len(matchPos) > 1:
+                clusterScore = clusterScore + matchPos[-1] - matchPos[-2] - 1
             left = pos + 1
             if d == "r":
                 d = "l"
 
-    return (True, matchPos)
+    return (True, matchPos, clusterScore, len(candidate) - matchPos[0], sepScore)
 
 
 def fuzzyMatches(query, candidates, limit):
@@ -53,27 +58,20 @@ def fuzzyMatches(query, candidates, limit):
     :returns: TODO
 
     """
-    findFirstN = False
+    findFirstN = True
     count = 0
     for x in candidates:
-        l,r = 0, len(x)
+        l, r = 0, len(x)
         didMatch = False
         positions = []
         while not didMatch:
-            didMatch, positions = isMatch(query, x, l, r)
+            didMatch, positions, *rest = isMatch(query, x, l, r)
             if not positions:
                 break
             r = positions[0]
         if didMatch:
-            clusterScore = 0
-            for i, p in enumerate(positions):
-                if i > 0:
-                    clusterScore = positions[i] - positions[i-1] - 1
-            sepscore = functools.reduce(lambda x, y: x+y, 
-                                        map(lambda p: 1 if x[p - 1] in sep else
-                                            0, positions))
             count = count + 1
-            yield (x, positions, clusterScore, len(x) - positions[0], sepscore)
+            yield (x, positions, *rest)
             if findFirstN and count == limit:
                 return
 
@@ -99,6 +97,6 @@ if __name__ == "__main__":
 
     with open(file) as fh:
         lines = (line.strip() for line in fh.readlines())
-        for x in scoreMatches(fuzzyMatches(query, lines, 10), 10):
+        for x in scoreMatches(fuzzyMatches(query, lines, 50), 10):
             print(x)
 
