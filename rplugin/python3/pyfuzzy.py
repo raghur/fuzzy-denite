@@ -5,14 +5,16 @@ import heapq
 sep = '/\_.'
 
 
-def scorer(x):
+def scorer(x, key):
+    candidate = key(x[0])
+    # print("item is", candidate)
     # how close to the end of string as pct
-    position_boost = 100 * (x[1][-1]/len(x[0]))
+    position_boost = 100 * (x[1][0]/len(candidate))
     # absolute value of how close it is to end
     end_boost = 100 - x[3]
 
     # how closely are matches clustered
-    cluster_boost = 100 * (1 - x[2]/len(x[0])) * 2
+    cluster_boost = 100 * (1 - x[2]/len(candidate)) * 2
 
     # boost for matches after separators
     # weighted by length of query
@@ -20,8 +22,12 @@ def scorer(x):
     return position_boost + end_boost + cluster_boost + sep_boost
 
 
-def scoreMatches(matches, limit):
-    return heapq.nlargest(limit, matches, key=scorer)
+def scoreMatches(query, candidates, limit, key=None):
+    def idfn(x):
+        return x
+    key = idfn if not key else key
+    matches = fuzzyMatches(query, candidates, limit * 5, key)
+    return heapq.nlargest(limit, matches, key=lambda x: scorer(x, key))
 
 
 def isMatch(query, candidate, left, right):
@@ -48,7 +54,7 @@ def isMatch(query, candidate, left, right):
     return (True, matchPos, clusterScore, len(candidate) - matchPos[0], sepScore)
 
 
-def fuzzyMatches(query, candidates, limit):
+def fuzzyMatches(query, candidates, limit, key=None):
     """Find fuzzy matches among given candidates
 
     :query: TODO
@@ -60,11 +66,12 @@ def fuzzyMatches(query, candidates, limit):
     findFirstN = True
     count = 0
     for x in candidates:
-        l, r = 0, len(x)
+        s = key(x)
+        l, r = 0, len(s)
         didMatch = False
         positions = []
         while not didMatch:
-            didMatch, positions, *rest = isMatch(query, x, l, r)
+            didMatch, positions, *rest = isMatch(query, s, l, r)
             if not positions:
                 break
             r = positions[0]
@@ -96,6 +103,6 @@ if __name__ == "__main__":
 
     with open(file) as fh:
         lines = (line.strip() for line in fh.readlines())
-        for x in scoreMatches(fuzzyMatches(query, lines, 50), 10):
+        for x in scoreMatches(query, lines, 10):
             print(x)
 

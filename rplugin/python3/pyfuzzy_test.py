@@ -19,27 +19,27 @@ def test_match_should_find_at_end():
 
 def test_must_find_matches_after_failed_partial_matches():
     lines = ["/this/a/is/pi/ap/andnomatchlater"]
-    results = list(scoreMatches(fuzzyMatches("api", lines, 50), 10))
+    results = list(scoreMatches("api", lines, 10))
     assert len(results) == 1
 
 
 def test_must_prefer_match_at_end(benchmark):
-    results = benchmark(lambda: list(scoreMatches(fuzzyMatches("api", lines, 50), 10)))
+    results = benchmark(lambda: list(scoreMatches("api", lines, 10)))
     assert results[0][0].endswith("api.pb.go")
 
 
 def test_must_prefer_match_after_separators(benchmark):
-    results = benchmark(lambda: list(scoreMatches(fuzzyMatches("rct", lines, 50), 10)))
+    results = benchmark(lambda: list(scoreMatches("rct", lines, 10)))
     assert results[0][0].endswith("root_cmd_test.go")
 
 
 def test_must_prefer_longer_match(benchmark):
-    results = benchmark(lambda: list(scoreMatches(fuzzyMatches("fuzz", lines, 50), 10)))
+    results = benchmark(lambda: list(scoreMatches("fuzz", lines, 10)))
     assert results[0][0].endswith("gofuzzy.py")
     assert results[1][0].endswith("pyfuzzy.py")
 
 
 def test_must_score_cluster_higher(benchmark):
-    results = benchmark(lambda: list(scoreMatches(fuzzyMatches("cli", lines, 50), 10)))
+    results = benchmark(lambda: list(scoreMatches("cli", lines, 10)))
     assert results[0][0].endswith("cli.go")
     assert results[1][0].endswith("client.go")

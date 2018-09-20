@@ -11,7 +11,7 @@ if pkgPath not in sys.path:
     logger.debug("added %s to sys.path" % pkgPath)
     sys.path.insert(0, pkgPath)
 
-from pyfuzzy import fuzzyMatches, scoreMatches
+from pyfuzzy import scoreMatches
 
 
 class Filter(Base):
@@ -26,11 +26,9 @@ class Filter(Base):
         if not context['candidates'] or not context['input']:
             return context['candidates']
         candidates = context['candidates']
-        items = (d['word'] for d in candidates)
         qry = context['input']
-        results = scoreMatches(fuzzyMatches(qry, items, 10), 10)
-        # self.debug("results %s" % results)
-        resultItems = set([w[0] for w in results])
-        rset =  [c for c in candidates if c['word'] in resultItems]
+        # self.debug("candidates %s %s" % (qry, len(candidates)))
+        results = scoreMatches(qry, candidates, 10, key=lambda x: x['word'])
+        rset = [w[0] for w in results]
         # self.debug("rset %s" % rset)
         return rset
