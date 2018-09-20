@@ -7,13 +7,18 @@ with open("neomru_file") as fh:
 
 def test_is_match():
     c = "D:/code/go/src/github.com/raghur/fuzzy-denite/lib/api.pb.go"
-    match, positions, *rest = isMatch("api", c, 0, len(c))
+    match, positions, *rest = isMatch("api", c)
     assert match
 
 
 def test_match_should_find_at_end():
     c = "D:/code/go/src/github.com/raghur/fuzzy-denite/lib/api.pb.go"
-    match, positions, *rest = isMatch("api.pb.go", c, 0, len(c))
+    match, positions, *rest = isMatch("api.pb.go", c)
+    assert match
+
+def test_match_should_find_at_end1():
+    c = "D:/code/go/src/github.com/raghur/fuzzy-denite/lib/test_main.py"
+    match, positions, *rest = isMatch("test", c)
     assert match
 
 
