@@ -25,6 +25,10 @@ def test_must_find_matches_should_work_correctly_when_query_has_char_repeated():
     results = list(fuzzyMatches("test", c, 10))
     assert len(results) == 1
 
+def test_must_find_matches_should_work_when_match_extends_to_the_right():
+    c = ["xxxxxxx_a_g_c_g_d_e_f"]
+    results = list(fuzzyMatches("gcf", c, 10))
+    assert len(results) == 1
 
 def test_must_find_matches_after_failed_partial_matches():
     lines = ["/this/a/is/pi/ap/andnomatchlater"]
