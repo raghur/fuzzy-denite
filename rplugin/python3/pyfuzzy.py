@@ -31,15 +31,18 @@ def scoreMatches(query, candidates, limit, key=None):
 
 
 def isMatch(query, candidate, left, right):
+    # print("Call ", query, left, right)
     matchPos = []
     d = "r"
     sepScore = 0
     clusterScore = 0
     for i, c in enumerate(query):
+        # print ("Looking", i, c, left, right)
         if d == "r":
-            pos = candidate.rfind(c, left, right - i)
+            pos = candidate.rfind(c, left, right)
         else:
-            pos = candidate.find(c, left, right)
+            pos = candidate.find(c, left)
+        # print("Result", i, pos, c)
         if pos == -1:
             return (False, matchPos)
         else:
@@ -50,7 +53,6 @@ def isMatch(query, candidate, left, right):
             left = pos + 1
             if d == "r":
                 d = "l"
-
     return (True, matchPos, clusterScore, len(candidate) - matchPos[0], sepScore)
 
 
@@ -63,6 +65,9 @@ def fuzzyMatches(query, candidates, limit, key=None):
     :returns: TODO
 
     """
+    def idfn(x):
+        return x
+    key = idfn if not key else key
     findFirstN = True
     count = 0
     for x in candidates:

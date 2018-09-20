@@ -17,6 +17,15 @@ def test_match_should_find_at_end():
     assert match
 
 
+def test_must_find_matches_should_work_correctly_when_query_has_char_repeated():
+    # in this case t-es-t - the t repeats
+    # when looking right, we should not be bounded by the last found result
+    # endpoint
+    c = ["D:/code/go/src/github.com/raghur/fuzzy-denite/lib/test_main.py"]
+    results = list(fuzzyMatches("test", c, 10))
+    assert len(results) == 1
+
+
 def test_must_find_matches_after_failed_partial_matches():
     lines = ["/this/a/is/pi/ap/andnomatchlater"]
     results = list(scoreMatches("api", lines, 10))
