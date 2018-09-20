@@ -7,17 +7,16 @@ sep = '/\_.'
 
 def scorer(x):
     # how close to the end of string as pct
-    position_boost = 100 * x[1][-1]/len(x[0])
-
+    position_boost = 100 * (x[1][-1]/len(x[0]))
     # absolute value of how close it is to end
     end_boost = 100 - x[3]
 
     # how closely are matches clustered
-    cluster_boost = 100 * (1 - x[2]/len(x[0]))
+    cluster_boost = 100 * (1 - x[2]/len(x[0])) * 2
 
     # boost for matches after separators
     # weighted by length of query
-    sep_boost = 100 * x[4]/len(x[1]) * 0.5
+    sep_boost = 100 * x[4]/len(x[1]) * 0.25
     return position_boost + end_boost + cluster_boost + sep_boost
 
 
