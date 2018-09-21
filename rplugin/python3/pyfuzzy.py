@@ -1,5 +1,4 @@
 import sys
-import functools
 import heapq
 
 sep = '/\_.'
@@ -10,6 +9,16 @@ def idfn(x):
 
 
 def scorer(x, key):
+    """
+        :x: - tuple of (item, positions, clusterScore, endScore, sepScore)
+            - item - the item itself
+            - positions - indices where each char matched
+            - clusterScore - How closely are matched chars clustered - 0 if
+            consecutive
+            - endScore - how close to the end of the string (len(s) - pos[0])
+            - sepScore - how many matches were after separators (count)
+        :key: - key func that when applied to x[0] returns the search string
+    """
     candidate = key(x[0])
     # print("item is", candidate)
     # how close to the end of string as pct
@@ -82,8 +91,6 @@ def isMatch(query, candidate):
     return (didMatch, positions, *rest)
 
 
-
-
 def fuzzyMatches(query, candidates, limit, key=None):
     """Find fuzzy matches among given candidates
 
@@ -98,7 +105,7 @@ def fuzzyMatches(query, candidates, limit, key=None):
     count = 0
     for x in candidates:
         s = key(x)
-        didMatch, positions, *rest = isMatch(query, s)
+        didMatch, positions, *rest = isMatch(query.lower(), s.lower())
         if didMatch:
             count = count + 1
             yield (x, positions, *rest)
