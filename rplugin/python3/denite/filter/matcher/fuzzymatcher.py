@@ -1,5 +1,6 @@
 
 from ..base import Base
+from denite.util import convert2fuzzy_pattern
 import os
 import sys
 import logging
@@ -32,3 +33,9 @@ class Filter(Base):
         rset = [w[0] for w in results]
         # self.debug("rset %s" % rset)
         return rset
+
+    def convert_pattern(self, input_str):
+        # return convert2fuzzy_pattern(input_str)
+        p = convert2fuzzy_pattern(input_str)
+        # self.debug("pattern: %s : %s" % (input_str, p))
+        return p
