@@ -1,7 +1,7 @@
 import sys
 import heapq
 
-sep = '/\_.'
+sep = '-/\_.'
 
 
 def idfn(x):
@@ -15,7 +15,6 @@ def scorer(x, key):
             - positions - indices where each char matched
             - clusterScore - How closely are matched chars clustered - 0 if
             consecutive
-            - endScore - how close to the end of the string (len(s) - pos[0])
             - sepScore - how many matches were after separators (count)
             - camelCaseScore - how many matched chars were camelcase
         :key: - key func that when applied to x[0] returns the search string
@@ -27,20 +26,21 @@ def scorer(x, key):
     # how close to the end of string as pct
     position_boost = 100 * (x[1][0]/lcan)
     # absolute value of how close it is to end
-    end_boost = 100 - x[3]
+    end_boost = (100 - (lcan - x[1][0])) * 2
 
     # how closely are matches clustered
-    cluster_boost = 100 * (1 - x[2]/lcan) * 2
+    cluster_boost = 100 * (1 - x[2]/lcan) * 4
 
     # boost for matches after separators
     # weighted by length of query
-    sep_boost = 100 * x[4]/lqry * 0.25
+    sep_boost = 100 * x[3]/lqry * 0.75
 
     # boost for camelCase matches
     # weighted by lenght of query
-    camel_boost = 100 * x[5]/lqry
+    camel_boost = 100 * x[4]/lqry
 
     return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
+    # return position_boost + cluster_boost + sep_boost + camel_boost
 
 
 def scoreMatches(query, candidates, limit, key=None):
@@ -90,8 +90,7 @@ def isMatch(query, candidate):
                     clusterScore = clusterScore + matchPos[-1] - matchPos[-2] - 1
                 left = pos + 1
                 first = False
-        return (True, matchPos, clusterScore,
-                len(candidate) - matchPos[0], sepScore, camelCaseScore)
+        return (True, matchPos, clusterScore, sepScore, camelCaseScore)
 
     didMatch = False
     l, r = 0, len(candidate)
