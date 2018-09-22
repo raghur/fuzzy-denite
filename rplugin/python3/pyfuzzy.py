@@ -17,22 +17,30 @@ def scorer(x, key):
             consecutive
             - endScore - how close to the end of the string (len(s) - pos[0])
             - sepScore - how many matches were after separators (count)
+            - camelCaseScore - how many matched chars were camelcase
         :key: - key func that when applied to x[0] returns the search string
     """
     candidate = key(x[0])
+    lqry = len(x[1])
+    lcan = len(candidate)
     # print("item is", candidate)
     # how close to the end of string as pct
-    position_boost = 100 * (x[1][0]/len(candidate))
+    position_boost = 100 * (x[1][0]/lcan)
     # absolute value of how close it is to end
     end_boost = 100 - x[3]
 
     # how closely are matches clustered
-    cluster_boost = 100 * (1 - x[2]/len(candidate)) * 2
+    cluster_boost = 100 * (1 - x[2]/lcan) * 2
 
     # boost for matches after separators
     # weighted by length of query
-    sep_boost = 100 * x[4]/len(x[1]) * 0.25
-    return position_boost + end_boost + cluster_boost + sep_boost
+    sep_boost = 100 * x[4]/lqry * 0.25
+
+    # boost for camelCase matches
+    # weighted by lenght of query
+    camel_boost = 100 * x[5]/lqry
+
+    return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
 
 
 def scoreMatches(query, candidates, limit, key=None):
@@ -44,10 +52,14 @@ def scoreMatches(query, candidates, limit, key=None):
 def isMatch(query, candidate):
     def walkString(query, candidate, left, right):
         # print("Call ", query, left, right)
+        orig = candidate
+        candidate = candidate.lower()
+        query = query.lower()
         matchPos = []
         first = True
         sepScore = 0
         clusterScore = 0
+        camelCaseScore = 0
         for i, c in enumerate(query):
             # print ("Looking", i, c, left, right)
             if first:
@@ -69,13 +81,17 @@ def isMatch(query, candidate):
                     else:
                         return (False, [posLeft])
             else:
-                sepScore = sepScore + 1 if candidate[pos -1] in sep else sepScore
+                prevChar = orig[pos -1]
+                sepScore = sepScore + 1 if prevChar in sep else sepScore
+                camelCaseScore = camelCaseScore + 1 if ord(orig[pos]) < 97 \
+                    and ord(prevChar) >= 97 else camelCaseScore
                 matchPos.append(pos)
                 if len(matchPos) > 1:
                     clusterScore = clusterScore + matchPos[-1] - matchPos[-2] - 1
                 left = pos + 1
                 first = False
-        return (True, matchPos, clusterScore, len(candidate) - matchPos[0], sepScore)
+        return (True, matchPos, clusterScore,
+                len(candidate) - matchPos[0], sepScore, camelCaseScore)
 
     didMatch = False
     l, r = 0, len(candidate)
@@ -105,7 +121,7 @@ def fuzzyMatches(query, candidates, limit, key=None):
     count = 0
     for x in candidates:
         s = key(x)
-        didMatch, positions, *rest = isMatch(query.lower(), s.lower())
+        didMatch, positions, *rest = isMatch(query, s)
         if didMatch:
             count = count + 1
             yield (x, positions, *rest)

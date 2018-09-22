@@ -40,6 +40,18 @@ def test_must_find_matches_after_failed_partial_matches():
     results = list(scoreMatches("api", lines, 10))
     assert len(results) == 1
 
+def test_must_search_case_insensitively():
+    results = list(scoreMatches("ME", lines, 10))
+    assert results[0][0].endswith("README.md")
+
+def test_must_score_camel_case_higher():
+    c = ["/this/is/fileone.txt", "/this/is/FileOne.txt"]
+    results = list(scoreMatches("fo", c, 10))
+    assert results[0][0].endswith("FileOne.txt")
+
+def test_must_score_camel_case_higher1():
+    results = list(scoreMatches("rv", lines, 10))
+    assert results[0][0].endswith("RelVer")
 
 def test_must_prefer_match_at_end(benchmark):
     results = benchmark(lambda: list(scoreMatches("api", lines, 10)))
