@@ -5,3 +5,5 @@ __pycache__/
 fuzzy-denite-*
 .benchmarks/
 .cache/
+*.so
+nimcache/
