@@ -1,4 +1,3 @@
-
 from ..base import Base
 from denite.util import convert2fuzzy_pattern
 import os
@@ -28,8 +27,14 @@ class Filter(Base):
             return context['candidates']
         candidates = context['candidates']
         qry = context['input']
+        # self.debug("source: %s" % candidates[0]['source_name'])
+        # self.debug("source: %s" % context['source_name'])
+        ispath = candidates[0]['source_name'] in ["file", "file_rec",
+                                                  "file_mru", "directory",
+                                                  "directory_mru"]
         # self.debug("candidates %s %s" % (qry, len(candidates)))
-        results = scoreMatches(qry, candidates, 10, key=lambda x: x['word'])
+        results = scoreMatches(qry, candidates, 10, key=lambda x: x['word'],
+                               ispath=ispath)
         rset = [w[0] for w in results]
         # self.debug("rset %s" % rset)
         return rset

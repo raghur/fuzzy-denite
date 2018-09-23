@@ -1,14 +1,14 @@
 import sys
 import heapq
 
-sep = '-/\_.'
+sep = '-/\_. '
 
 
 def idfn(x):
     return x
 
 
-def scorer(x, key):
+def scorer(x, key, ispath=True):
     """
         :x: - tuple of (item, positions, clusterScore, endScore, sepScore)
             - item - the item itself
@@ -22,11 +22,14 @@ def scorer(x, key):
     candidate = key(x[0])
     lqry = len(x[1])
     lcan = len(candidate)
-    # print("item is", candidate)
-    # how close to the end of string as pct
-    position_boost = 100 * (x[1][0]/lcan)
-    # absolute value of how close it is to end
-    end_boost = (100 - (lcan - x[1][0])) * 2
+
+    position_boost, end_boost = 0, 0
+    if ispath:
+        # print("item is", candidate)
+        # how close to the end of string as pct
+        position_boost = 100 * (x[1][0]/lcan)
+        # absolute value of how close it is to end
+        end_boost = (100 - (lcan - x[1][0])) * 2
 
     # how closely are matches clustered
     cluster_boost = 100 * (1 - x[2]/lcan) * 4
@@ -43,10 +46,10 @@ def scorer(x, key):
     # return position_boost + cluster_boost + sep_boost + camel_boost
 
 
-def scoreMatches(query, candidates, limit, key=None):
+def scoreMatches(query, candidates, limit, key=None, ispath=True):
     key = idfn if not key else key
     matches = fuzzyMatches(query, candidates, limit * 5, key)
-    return heapq.nlargest(limit, matches, key=lambda x: scorer(x, key))
+    return heapq.nlargest(limit, matches, key=lambda x: scorer(x, key, ispath))
 
 
 def isMatch(query, candidate):

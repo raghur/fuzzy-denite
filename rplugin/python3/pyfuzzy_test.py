@@ -73,3 +73,10 @@ def test_must_score_cluster_higher(benchmark):
     results = benchmark(lambda: list(scoreMatches("cli", lines, 10)))
     assert results[0][0].endswith("cli.go")
     assert results[1][0].endswith("client.go")
+
+
+def test_must_ignore_position_for_non_file_matching():
+    c = ["/this/is/fileone.txt", "/that/was/FileOne.txt"]
+    results = list(scoreMatches("is", c, 10, False))
+    assert results[0][0].endswith("fileone.txt")
+
