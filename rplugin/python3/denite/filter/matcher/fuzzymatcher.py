@@ -31,7 +31,8 @@ class Filter(Base):
         # self.debug("source: %s" % context['source_name'])
         ispath = candidates[0]['source_name'] in ["file", "file_rec",
                                                   "file_mru", "directory",
-                                                  "directory_mru"]
+                                                  "directory_mru", "file_old",
+                                                  "directory_rec", "buffer"]
         # self.debug("candidates %s %s" % (qry, len(candidates)))
         results = scoreMatches(qry, candidates, 10, key=lambda x: x['word'],
                                ispath=ispath)
