@@ -11,7 +11,10 @@ c = {'abbr':
 
 print(test.scoreMatches("github", [c], 1))
 
-c = ["fileone.txt/is/this/", "/this/is/fileone.txt", "/this/is/FileOne.txt"]
-results = test.scoreMatchesStr("fo", c, 10)
-print(results)
-assert results[0][0].endswith("FileOne.txt")
+for i in range(100000):
+    c = ["fileone.txt/is/this/", "/this/is/fileone.txt", "/this/is/FileOne.txt"]
+    results = list(test.scoreMatchesStr("fo", c, 10))
+    # print(results)
+    assert results[0][0].endswith("FileOne.txt")
+    if i % 100 == 0:
+        print(".")
