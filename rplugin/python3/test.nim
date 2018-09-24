@@ -3,24 +3,6 @@ import strutils
 import binaryheap
 
 const sep:string = "-/\\_. "
-proc greet(name: string): string {.exportpy.} =
-    return "Hello, " & name & "!"
-
-
-
-proc arr(items: seq[string]): seq[string] {.exportpy.} =
-    var r = newSeq[string](len(items))
-    for i, x in items:
-        r[i] = x
-    return r
-
-
-type
-    MyObj = object
-        a, b: int
-        c: string
-
-    MyRefObj = ref MyObj
 
 type
     Candidate = object
@@ -33,11 +15,6 @@ type
         positions: seq[int]
         sepScore, clusterScore, camelCaseScore: int
 
-
-
-proc getMyObj(): MyObj {.exportpy.} =
-    result.a = 5
-    result.c = "hello"
 
 proc scorer[T](x: Match[T], fn: proc(x:T):string, ispath:bool=true): int =
     let lqry = len(x.positions)
@@ -57,7 +34,7 @@ proc scorer[T](x: Match[T], fn: proc(x:T):string, ispath:bool=true): int =
 
     # boost for matches after separators
     # weighted by length of query
-    var sep_boost = (100 * x.sepScore div lqry) div 2
+    var sep_boost = (100 * x.sepScore div lqry) * 75 div 100
 
     # boost for camelCase matches
     # weighted by lenght of query
@@ -96,6 +73,8 @@ proc isMatch[T](query, candidate: string): Match[T] =
                     var posLeft = strutils.rfind(candidate, c, result.positions[0])
                     if posLeft != -1:
                         result.positions = @[posLeft]
+                    else:
+                        result.positions = @[]
                     return
             else:
                 if pos == 0:
@@ -130,18 +109,20 @@ proc isMatch[T](query, candidate: string): Match[T] =
         r = result.positions[0]
     return
 
-iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string): tuple[c:T, s:int] =
+iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string, ispath: bool = true): tuple[c:T, s:int] =
     var findFirstN = true
     var count = 0
     var heap = newHeap[tuple[c:T, s:int]]() do (a, b: tuple[c:T, s:int]) -> int:
         b.s - a.s
     for x in candidates:
         var s = fn(x)
+        # echo "processing: ", s
         var res = isMatch[T](query, s)
         if res.found:
             res.candidate = x
             count = count + 1
-            heap.push((x, scorer[T](res, fn, true)))
+            # echo s, "added to heap"
+            heap.push((x, scorer[T](res, fn, ispath)))
             if findFirstN and count == limit * 5:
                 break
     var c = 0
@@ -151,17 +132,18 @@ iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn:
         c = c + 1
 
 
-proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int): seq[tuple[c:Candidate, s:int]] {.exportpy.} =
+proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, ispath: bool=true): seq[tuple[c:Candidate, s:int]] {.exportpy.} =
     proc getWord(x: Candidate): string = return x.word
     result = @[]
-    for m in fuzzyMatches[Candidate](query, candidates, limit, getWord):
+    for m in fuzzyMatches[Candidate](query, candidates, limit, getWord, ispath):
         result.add(m)
     return
 
-proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int): seq[tuple[c:string, s:int]] {.exportpy.} =
+proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[c:string, s:int]] {.exportpy.} =
     proc idfn(x: string):string = return x
     result = @[]
-    for m in fuzzyMatches[string](query, candidates, limit, idfn):
+    # echo candidates
+    for m in fuzzyMatches[string](query, candidates, limit, idfn, ispath):
         result.add(m)
     return
     # return iterator

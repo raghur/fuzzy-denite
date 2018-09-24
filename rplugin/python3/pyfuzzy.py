@@ -27,20 +27,20 @@ def scorer(x, key, ispath=True):
     if ispath:
         # print("item is", candidate)
         # how close to the end of string as pct
-        position_boost = 100 * (x[1][0]/lcan)
+        position_boost = 100 * (x[1][0]//lcan)
         # absolute value of how close it is to end
         end_boost = (100 - (lcan - x[1][0])) * 2
 
     # how closely are matches clustered
-    cluster_boost = 100 * (1 - x[2]/lcan) * 4
+    cluster_boost = 100 * (1 - x[2]//lcan) * 4
 
     # boost for matches after separators
     # weighted by length of query
-    sep_boost = 100 * x[3]/lqry * 0.75
+    sep_boost = 100 * x[3]//lqry * 75//100
 
     # boost for camelCase matches
     # weighted by lenght of query
-    camel_boost = 100 * x[4]/lqry
+    camel_boost = 100 * x[4]//lqry
 
     return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
     # return position_boost + cluster_boost + sep_boost + camel_boost
