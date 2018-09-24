@@ -1,4 +1,9 @@
-from pyfuzzy import scoreMatches, fuzzyMatches, isMatch
+import os
+if os.getenv("FUZZY_CMOD"):
+    from test import scoreMatchesStr
+    scoreMatches = scoreMatchesStr
+else:
+    from pyfuzzy import scoreMatches, fuzzyMatches, isMatch
 
 lines = []
 with open("neomru_file") as fh:
@@ -48,6 +53,7 @@ def test_must_score_camel_case_higher():
     c = ["/this/is/fileone.txt", "/this/is/FileOne.txt"]
     results = list(scoreMatches("fo", c, 10))
     assert results[0][0].endswith("FileOne.txt")
+
 
 def test_must_score_camel_case_higher1():
     results = list(scoreMatches("rv", lines, 10))
