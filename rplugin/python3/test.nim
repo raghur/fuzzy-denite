@@ -1,5 +1,6 @@
 import nimpy
 import strutils
+import binaryheap
 
 const sep:string = "-/\\_. "
 proc greet(name: string): string {.exportpy.} =
@@ -26,9 +27,9 @@ type
         abbr, source_name, word: string
         source_index: int
 type
-    Match = object
+    Match[T] = object
         found:bool
-        candidate: string
+        candidate: T
         positions: seq[int]
         sepScore, clusterScore, camelCaseScore: int
 
@@ -38,9 +39,35 @@ proc getMyObj(): MyObj {.exportpy.} =
     result.a = 5
     result.c = "hello"
 
-proc isMatch(query, candidate: string): Match =
+proc scorer[T](x: Match[T], fn: proc(x:T):string, ispath:bool=true): int =
+    let lqry = len(x.positions)
+    let lcan = len(fn(x.candidate))
 
-    proc walkString(q, c: string, left, right: int): Match =
+    var position_boost = 0
+    var end_boost = 0
+    if ispath:
+        # print("item is", candidate)
+        # how close to the end of string as pct
+        position_boost = 100 * (x.positions[0] div lcan)
+        # absolute value of how close it is to end
+        end_boost = (100 - (lcan - x.positions[0])) * 2
+
+    # how closely are matches clustered
+    var cluster_boost = 100 * (1 - x.clusterScore div lcan) * 4
+
+    # boost for matches after separators
+    # weighted by length of query
+    var sep_boost = (100 * x.sepScore div lqry) div 2
+
+    # boost for camelCase matches
+    # weighted by lenght of query
+    var camel_boost = 100 * x.camelCaseScore div lqry
+
+    return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
+
+proc isMatch[T](query, candidate: string): Match[T] =
+
+    proc walkString(q, c: string, left, right: int): Match[T] =
         # print("Call ", query, left, right)
         var orig = c
         var candidate = strutils.toLowerAscii(c)
@@ -71,17 +98,22 @@ proc isMatch(query, candidate: string): Match =
                         result.positions = @[posLeft]
                     return
             else:
-                var prevChar = orig[pos - 1]
-                if prevChar in sep:
+                if pos == 0:
                     result.sepScore = result.sepScore + 1
-                if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
                     result.camelCaseScore = result.camelCaseScore + 1
+                else:
+                    var prevChar = orig[pos - 1]
+                    if prevChar in sep:
+                        result.sepScore = result.sepScore + 1
+                    if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
+                        result.camelCaseScore = result.camelCaseScore + 1
                 result.positions.add(pos)
                 if len(result.positions) > 1:
                     var last = len(result.positions) - 1
                     result.clusterScore = result.clusterScore + result.positions[last] - result.positions[last - 1] - 1
                 l = pos + 1
                 first = false
+        result.found = true
         return
 
     var didMatch = false
@@ -98,23 +130,38 @@ proc isMatch(query, candidate: string): Match =
         r = result.positions[0]
     return
 
-iterator fuzzyMatches(query:string, candidates: openarray[Candidate], limit: int): Candidate = 
+iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string): tuple[c:T, s:int] =
     var findFirstN = true
     var count = 0
+    var heap = newHeap[tuple[c:T, s:int]]() do (a, b: tuple[c:T, s:int]) -> int:
+        b.s - a.s
     for x in candidates:
-        var s = x.word
-        var res = isMatch(query, s)
+        var s = fn(x)
+        var res = isMatch[T](query, s)
         if res.found:
+            res.candidate = x
             count = count + 1
-            yield x
-            if findFirstN and count == limit:
+            heap.push((x, scorer[T](res, fn, true)))
+            if findFirstN and count == limit * 5:
                 break
+    var c = 0
+    while heap.size > 0 and c < limit:
+        var x = heap.pop()
+        yield x
+        c = c + 1
 
 
-proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int): seq[Candidate] {.exportpy.} =
+proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int): seq[tuple[c:Candidate, s:int]] {.exportpy.} =
+    proc getWord(x: Candidate): string = return x.word
     result = @[]
-    for m in fuzzyMatches(query, candidates, limit * 5):
+    for m in fuzzyMatches[Candidate](query, candidates, limit, getWord):
+        result.add(m)
+    return
+
+proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int): seq[tuple[c:string, s:int]] {.exportpy.} =
+    proc idfn(x: string):string = return x
+    result = @[]
+    for m in fuzzyMatches[string](query, candidates, limit, idfn):
         result.add(m)
     return
     # return iterator
-
