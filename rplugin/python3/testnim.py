@@ -9,4 +9,4 @@ c = {'abbr':
  'source_index': 0,
  'action__path': '/home/raghu/code/go/src/github.com/raghur/fuzzy-denite/rplugin/python3/denite/filter/matcher/fuzzymatcher.py'}
 
-print(test.scoreMatches([c]))
+print(test.scoreMatches("github", [c], 1))
