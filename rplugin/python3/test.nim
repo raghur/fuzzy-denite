@@ -2,13 +2,15 @@ import nimpy
 import strutils
 import binaryheap
 import logging
+import strformat
 
-# let L = newConsoleLogger(levelThreshold = logging.Level.lvlDebug)
-let L = newConsoleLogger(levelThreshold = logging.Level.lvlError)
+let L = newConsoleLogger(levelThreshold = logging.Level.lvlDebug)
 addHandler(L)
 
 const sep:string = "-/\\_. "
-
+template l(fmt: string) =
+    when not defined(release):
+        debug(&fmt)
 type
     Match = object
         found:bool
@@ -44,7 +46,7 @@ proc scorer(x: Match, candidate:string, ispath:bool=true): int =
 proc isMatch(query, candidate: string): Match =
 
     proc walkString(q, c: string, left, right: int): Match =
-        debug "Call ", query, left, right
+        l "Call {query} {left} {right}"
         if left > right or right == 0:
             result.found = false
             return
@@ -57,12 +59,12 @@ proc isMatch(query, candidate: string): Match =
         var r = right
         result.positions = newSeq[int](len(q))
         for i, c in query:
-            debug "Looking", i, c, left, right
+            l "Looking: {i}, {c}, {left}, {right}"
             if first:
                 pos = strutils.rfind(candidate, c, r)
             else:
                 pos = strutils.find(candidate, c, l)
-            debug "Result", i, pos, c
+            l "Result: {i}, {pos}, {c}"
             if pos == -1:
                 result.found = false
                 if first:
@@ -76,7 +78,7 @@ proc isMatch(query, candidate: string): Match =
                         result.positions = @[]
                         return
                     var posLeft = strutils.rfind(candidate, c, result.positions[0] - 1)
-                    debug "posLeft ", c, result.positions[0], posLeft
+                    l "posLeft:  {c}, {result.positions[0]}, {posLeft}"
                     if posLeft != -1:
                         result.positions = @[posLeft]
                     else:
@@ -125,11 +127,11 @@ iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, i
         b.r - a.r
     # var heap = newHeapQueue[Match[T]]()
     for i, x in candidates:
-        debug "processing: ", x
+        l "processing:  {x}"
         var res = isMatch(query, x)
         if res.found:
             count = count + 1
-            debug "ADDED: ", x
+            l "ADDED: {x}"
             let rank = scorer(res, x, ispath)
             heap.push((i, rank))
             if findFirstN and count == limit * 5:
