@@ -6,4 +6,6 @@ fuzzy-denite-*
 .benchmarks/
 .cache/
 *.so
+*.pyd
+exp/
 nimcache/
