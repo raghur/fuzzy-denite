@@ -12,19 +12,7 @@ if pkgPath not in sys.path:
     sys.path.insert(0, pkgPath)
 
 import pyfuzzy
-useNative = False
 
-
-def scoreMatchesProxy(q, c, limit, key=None, ispath=True):
-    if useNative:
-        import test
-        idxArr = test.scoreMatchesStr(q, [key(d) for d in c], limit, ispath)
-        results = []
-        for i in idxArr:
-            results.append((c[i[0]], i[1]))
-        return results
-    else:
-        return pyfuzzy.scoreMatches(q, c, limit, key, ispath)
 
 class Filter(Base):
 
@@ -33,14 +21,21 @@ class Filter(Base):
 
         self.name = 'matcher/pyfuzzy'
         self.description = 'py fuzzy matcher'
-        self.useNative = False
+        un = self.vim.api.get_var("pyfuzzy#usenative")
+        if un > 0:
+            try:
+                import nim_fuzzy
+                self.nativeMethod = nim_fuzzy.scoreMatchesStr
+                self.useNative = True
+            except ModuleNotFoundError:
+                self.debug("Native module requested but unable to load native module")
+                self.debug("falling back to python implementation")
+                self.debug("Check if you have nim_fuzzy.so or nim_fuzzy.pyd at %s" %
+                           pkgPath)
+                self.useNative = False
+        self.debug("usenative: %s" % self.useNative)
 
     def filter(self, context):
-        self.useNative = self.vim.api.get_var("pyfuzzy#usenative")
-        if self.useNative > 0:
-            global useNative
-            useNative = True
-        self.debug("usenative: %s" % self.useNative)
         if not context['candidates'] or not context['input']:
             return context['candidates']
         candidates = context['candidates']
@@ -52,12 +47,23 @@ class Filter(Base):
                                                   "directory_mru", "file_old",
                                                   "directory_rec", "buffer"]
         # self.debug("candidates %s %s" % (qry, len(candidates)))
-        results = scoreMatchesProxy(qry, candidates, 10,
-                                    key=lambda x: x['word'], ispath=ispath)
+        results = self.scoreMatchesProxy(qry, candidates, 10,
+                                         key=lambda x: x['word'],
+                                         ispath=ispath)
         # self.debug("results %s" % results)
         rset = [w[0] for w in results]
         # self.debug("rset %s" % rset)
         return rset
+
+    def scoreMatchesProxy(self, q, c, limit, key=None, ispath=True):
+        if self.useNative:
+            idxArr = self.nativeMethod(q, [key(d) for d in c], limit, ispath)
+            results = []
+            for i in idxArr:
+                results.append((c[i[0]], i[1]))
+            return results
+        else:
+            return pyfuzzy.scoreMatches(q, c, limit, key, ispath)
 
     def convert_pattern(self, input_str):
         # return convert2fuzzy_pattern(input_str)

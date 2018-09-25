@@ -2,7 +2,7 @@ import os
 from pyfuzzy import fuzzyMatches, isMatch
 useNative = False
 if os.getenv("FUZZY_CMOD"):
-    from test import scoreMatchesStr
+    from nim_fuzzy import scoreMatchesStr
     useNative = True
 else:
     from pyfuzzy import scoreMatches

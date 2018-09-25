@@ -1,7 +1,4 @@
-import test
-import copy
-import sys
-
+import nim_fuzzy
 
 # c = {'abbr':
 #  '~/code/go/src/github.com/raghur/fuzzy-denite/rplugin/python3/denite/filter/matcher/fuzzymatcher.py',
@@ -17,7 +14,7 @@ def printResults(query, results):
     print("query: %s, results: " % query, results)
 
 def scoreMatches(q, c, limit, ispath):
-    idxArr = test.scoreMatchesStr(q, c, limit, ispath)
+    idxArr = nim_fuzzy.scoreMatchesStr(q, c, limit, ispath)
     results = []
     for i in idxArr:
         results.append((c[i[0]],i[1]))
