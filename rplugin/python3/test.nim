@@ -3,15 +3,12 @@ import strutils
 import binaryheap
 import logging
 
+# let L = newConsoleLogger(levelThreshold = logging.Level.lvlDebug)
 let L = newConsoleLogger(levelThreshold = logging.Level.lvlError)
 addHandler(L)
 
 const sep:string = "-/\\_. "
 
-type
-    Candidate = object
-        abbr, source_name, word: string
-        source_index: int
 type
     Match = object
         found:bool
@@ -47,8 +44,7 @@ proc scorer(x: Match, candidate:string, ispath:bool=true): int =
 proc isMatch(query, candidate: string): Match =
 
     proc walkString(q, c: string, left, right: int): Match =
-        # print("Call ", query, left, right)
-        # echo q, c, left, right
+        debug "Call ", query, left, right
         if left > right or right == 0:
             result.found = false
             return
@@ -61,12 +57,12 @@ proc isMatch(query, candidate: string): Match =
         var r = right
         result.positions = newSeq[int](len(q))
         for i, c in query:
-            # print ("Looking", i, c, left, right)
+            debug "Looking", i, c, left, right
             if first:
                 pos = strutils.rfind(candidate, c, r)
             else:
                 pos = strutils.find(candidate, c, l)
-            # print("Result", i, pos, c)
+            debug "Result", i, pos, c
             if pos == -1:
                 result.found = false
                 if first:
@@ -76,7 +72,11 @@ proc isMatch(query, candidate: string): Match =
                     # otherwise, find the non matching char to the left of the
                     # first char pos. Next search on has to be the left of this
                     # position
-                    var posLeft = strutils.rfind(candidate, c, result.positions[0])
+                    if result.positions[0] == 0:
+                        result.positions = @[]
+                        return
+                    var posLeft = strutils.rfind(candidate, c, result.positions[0] - 1)
+                    debug "posLeft ", c, result.positions[0], posLeft
                     if posLeft != -1:
                         result.positions = @[posLeft]
                     else:
@@ -129,7 +129,7 @@ iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, i
         var res = isMatch(query, x)
         if res.found:
             count = count + 1
-            debug x, " added to heap"
+            debug "ADDED: ", x
             let rank = scorer(res, x, ispath)
             heap.push((i, rank))
             if findFirstN and count == limit * 5:
@@ -139,18 +139,6 @@ iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, i
         let item =  heap.pop
         yield item
         c = c + 1
-
-proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, ispath: bool=true): seq[tuple[i:int, r:int]] {.exportpy.} =
-    var words = newSeq[string](len(candidates))
-    for i, v in candidates:
-        words[i] = v.word
-    var idx = 0
-    result = newSeq[tuple[i:int, r:int]](limit)
-    for m in fuzzyMatches(query, words, limit, ispath):
-        result.add(m)
-        idx.inc
-    result.setlen(idx)
-    return
 
 proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[i:int, r:int]] {.exportpy.} =
     result = newSeq[tuple[i:int, r:int]](limit)
