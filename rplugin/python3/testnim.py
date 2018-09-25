@@ -13,6 +13,7 @@ import sys
 
 # print(test.scoreMatches("github", [c], 1))
 def printResults(query, results):
+    print()
     print("query: %s, results: " % query, results)
 
 def scoreMatches(q, c, limit, ispath):
@@ -26,8 +27,6 @@ lines = []
 with open("neomru_file") as fh:
     lines = [line.strip() for line in fh.readlines()]
 
-# for i in range(1000):
-#     print("starting")
 results = scoreMatches("api", lines, 10, True)
 printResults("api", results)
 assert results[0][0].endswith("api.pb.go")
@@ -41,11 +40,15 @@ printResults("fuzz", results)
 assert results[0][0].endswith("pyfuzzy.py")
 assert results[1][0].endswith("gofuzzy.py")
 
-
 results = scoreMatches("cli", lines, 10, True)
 printResults("cli", results)
 assert results[0][0].endswith("listblogs.go")
 assert results[1][0].endswith("cli.go")
+
+results = scoreMatches("testn", lines, 10, True)
+printResults("testn", results)
+assert results[0][0].endswith("test_main.py")
+
 
 # c = ["fileone.txt/is/this/", "/this/is/fileone.txt", "/this/is/FileOne.txt"]
 # r = []
