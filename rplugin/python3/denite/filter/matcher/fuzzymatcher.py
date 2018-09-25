@@ -21,6 +21,7 @@ class Filter(Base):
 
         self.name = 'matcher/pyfuzzy'
         self.description = 'py fuzzy matcher'
+        self.useNative = False
         un = self.vim.api.get_var("pyfuzzy#usenative")
         if un > 0:
             try:
