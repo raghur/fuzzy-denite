@@ -12,29 +12,34 @@ import sys
 #  'action__path': '/home/raghu/code/go/src/github.com/raghur/fuzzy-denite/rplugin/python3/denite/filter/matcher/fuzzymatcher.py'}
 
 # print(test.scoreMatches("github", [c], 1))
+def printResults(query, results):
+    print("query: %s, results: " % query, results)
+
 scoreMatches = test.scoreMatchesStr
 lines = []
 with open("neomru_file") as fh:
     lines = [line.strip() for line in fh.readlines()]
 
 # for i in range(1000):
-# results = scoreMatches("api", lines, 10)
-# assert results[0][0].endswith("api.pb.go")
+#     print("starting")
+results = scoreMatches("api", lines, 10, True)
+printResults("api", results)
+assert results[0][0].endswith("api.pb.go")
 
-# print("data :", lines[:10])
-results = scoreMatches("rct", lines, 10)
-print("results: ", results)
+results = scoreMatches("rct", lines, 10, True)
+printResults("rct", results)
 assert results[0][0].endswith("root_cmd_test.go")
 
+results = scoreMatches("fuzz", lines, 10, True)
+printResults("fuzz", results)
+assert results[0][0].endswith("pyfuzzy.py")
+assert results[1][0].endswith("gofuzzy.py")
 
-# results = scoreMatches("fuzz", lines, 10)
-# assert results[0][0].endswith("gofuzzy.py")
-# assert results[1][0].endswith("pyfuzzy.py")
 
-
-# results = scoreMatches("cli", lines, 10)
-# assert results[0][0].endswith("cli.go")
-# assert results[1][0].endswith("client.go")
+results = scoreMatches("cli", lines, 10, True)
+printResults("cli", results)
+assert results[0][0].endswith("listblogs.go")
+assert results[1][0].endswith("cli.go")
 
 # c = ["fileone.txt/is/this/", "/this/is/fileone.txt", "/this/is/FileOne.txt"]
 # r = []

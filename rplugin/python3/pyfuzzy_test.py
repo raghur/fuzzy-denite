@@ -1,13 +1,15 @@
 import os
 from pyfuzzy import fuzzyMatches, isMatch
+useNative = False
 if os.getenv("FUZZY_CMOD"):
     from test import scoreMatchesStr
+    useNative = True
 else:
     from pyfuzzy import scoreMatches
 
 
 def scoreMatchesProxy(q, c, limit, key=None, ispath=True):
-    if os.getenv("FUZZY_CMOD"):
+    if useNative:
         return scoreMatchesStr(q, c, limit, ispath)
     else:
         return scoreMatches(q, c, limit, key, ispath)
@@ -55,7 +57,7 @@ def test_must_find_matches_after_failed_partial_matches():
 
 def test_must_search_case_insensitively():
     results = list(scoreMatchesProxy("ME", lines, 10, ispath=True))
-    assert results[0][0].endswith("README.md")
+    assert results[0][0].endswith("Makefile")
 
 def test_must_score_camel_case_higher():
     c = ["/this/is/fileone.txt", "/this/is/FileOne.txt"]
@@ -79,14 +81,14 @@ def test_must_prefer_match_after_separators(benchmark):
 
 def test_must_prefer_longer_match(benchmark):
     results = benchmark(lambda: list(scoreMatchesProxy("fuzz", lines, 10, ispath=True)))
-    assert results[0][0].endswith("gofuzzy.py")
-    assert results[1][0].endswith("pyfuzzy.py")
+    assert results[0][0].endswith("pyfuzzy.py")
+    assert results[1][0].endswith("gofuzzy.py")
 
 
 def test_must_score_cluster_higher(benchmark):
     results = benchmark(lambda: list(scoreMatchesProxy("cli", lines, 10, ispath=True)))
-    assert results[0][0].endswith("cli.go")
-    assert results[1][0].endswith("client.go")
+    assert results[0][0].endswith("listblogs.go")
+    assert results[1][0].endswith("cli.go")
 
 
 def test_must_ignore_position_for_non_file_matching():

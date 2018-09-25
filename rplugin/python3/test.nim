@@ -1,6 +1,10 @@
 import nimpy
 import strutils
 import binaryheap
+import logging
+
+let L = newConsoleLogger(levelThreshold = logging.Level.lvlError)
+addHandler(L)
 
 const sep:string = "-/\\_. "
 
@@ -13,8 +17,14 @@ type
         found:bool
         candidate: T
         positions: seq[int]
-        sepScore, clusterScore, camelCaseScore: int
+        sepScore, clusterScore, camelCaseScore, rank: int
 
+
+proc `==`[T](a, b : Match[T]):bool = 
+    return a.rank == b.rank
+
+proc `<`[T](a, b : Match[T]):int = 
+    return a.rank - b.rank
 
 proc scorer[T](x: Match[T], fn: proc(x:T):string, ispath:bool=true): int =
     let lqry = len(x.positions)
@@ -46,6 +56,10 @@ proc isMatch[T](query, candidate: string): Match[T] =
 
     proc walkString(q, c: string, left, right: int): Match[T] =
         # print("Call ", query, left, right)
+        # echo q, c, left, right
+        if left > right or right == 0:
+            result.found = false
+            return
         var orig = c
         var candidate = strutils.toLowerAscii(c)
         var query = strutils.toLowerAscii(q)
@@ -53,7 +67,7 @@ proc isMatch[T](query, candidate: string): Match[T] =
         var pos:int = -1
         var l = left
         var r = right
-        result.positions = @[]
+        result.positions = newSeq[int](len(q))
         for i, c in query:
             # print ("Looking", i, c, left, right)
             if first:
@@ -86,10 +100,9 @@ proc isMatch[T](query, candidate: string): Match[T] =
                         result.sepScore = result.sepScore + 1
                     if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
                         result.camelCaseScore = result.camelCaseScore + 1
-                result.positions.add(pos)
-                if len(result.positions) > 1:
-                    var last = len(result.positions) - 1
-                    result.clusterScore = result.clusterScore + result.positions[last] - result.positions[last - 1] - 1
+                result.positions[i] = pos
+                if i > 0:
+                    result.clusterScore = result.clusterScore + result.positions[i] - result.positions[i - 1] - 1
                 l = pos + 1
                 first = false
         result.found = true
@@ -103,34 +116,39 @@ proc isMatch[T](query, candidate: string): Match[T] =
         if result.found:
             break  # all done
         if len(result.positions) == 0:
+            result.found = false
             break  # all done too - first char didn't match
 
         # resume search - start looking left from this position onwards
         r = result.positions[0]
+        if r == 0:
+            result.found = false
+            break
     return
 
 iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string, ispath: bool = true): tuple[c:T, s:int] =
-    var findFirstN = true
+    let findFirstN = true
     var count = 0
-    var heap = newHeap[tuple[c:T, s:int]]() do (a, b: tuple[c:T, s:int]) -> int:
-        b.s - a.s
+    var heap = newHeap[Match[T]]() do (a, b: Match[T]) -> int:
+        b.rank - a.rank
+    # var heap = newHeapQueue[Match[T]]()
     for x in candidates:
         var s = fn(x)
-        # echo "processing: ", s
+        debug "processing: ", s
         var res = isMatch[T](query, s)
         if res.found:
             res.candidate = x
             count = count + 1
-            # echo s, "added to heap"
-            heap.push((x, scorer[T](res, fn, ispath)))
+            debug s, " added to heap"
+            res.rank = scorer[T](res, fn, ispath)
+            heap.push(res)
             if findFirstN and count == limit * 5:
                 break
     var c = 0
-    while heap.size > 0 and c < limit:
-        var x = heap.pop()
-        yield x
+    while c < limit and heap.size > 0:
+        let r = heap.pop
+        yield (r.candidate, r.rank)
         c = c + 1
-
 
 proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, ispath: bool=true): seq[tuple[c:Candidate, s:int]] {.exportpy.} =
     proc getWord(x: Candidate): string = return x.word
@@ -142,8 +160,6 @@ proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, i
 proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[c:string, s:int]] {.exportpy.} =
     proc idfn(x: string):string = return x
     result = @[]
-    # echo candidates
     for m in fuzzyMatches[string](query, candidates, limit, idfn, ispath):
         result.add(m)
     return
-    # return iterator
