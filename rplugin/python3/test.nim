@@ -126,13 +126,13 @@ proc isMatch[T](query, candidate: string): Match[T] =
             break
     return
 
-iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string, ispath: bool = true): tuple[c:T, s:int] =
+iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn: proc(c: T):string, ispath: bool = true): tuple[i:int, r:int] =
     let findFirstN = true
     var count = 0
-    var heap = newHeap[Match[T]]() do (a, b: Match[T]) -> int:
-        b.rank - a.rank
+    var heap = newHeap[tuple[i:int, r:int]]() do (a, b: tuple[i:int, r:int]) -> int:
+        b.r - a.r
     # var heap = newHeapQueue[Match[T]]()
-    for x in candidates:
+    for i, x in candidates:
         var s = fn(x)
         debug "processing: ", s
         var res = isMatch[T](query, s)
@@ -141,23 +141,23 @@ iterator fuzzyMatches[T](query:string, candidates: openarray[T], limit: int, fn:
             count = count + 1
             debug s, " added to heap"
             res.rank = scorer[T](res, fn, ispath)
-            heap.push(res)
+            heap.push((i, res.rank))
             if findFirstN and count == limit * 5:
                 break
     var c = 0
     while c < limit and heap.size > 0:
-        let r = heap.pop
-        yield (r.candidate, r.rank)
+        let item =  heap.pop
+        yield item
         c = c + 1
 
-proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, ispath: bool=true): seq[tuple[c:Candidate, s:int]] {.exportpy.} =
+proc scoreMatches(query: string, candidates: openarray[Candidate], limit: int, ispath: bool=true): seq[tuple[i:int, r:int]] {.exportpy.} =
     proc getWord(x: Candidate): string = return x.word
     result = @[]
     for m in fuzzyMatches[Candidate](query, candidates, limit, getWord, ispath):
         result.add(m)
     return
 
-proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[c:string, s:int]] {.exportpy.} =
+proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[i:int, r:int]] {.exportpy.} =
     proc idfn(x: string):string = return x
     result = @[]
     for m in fuzzyMatches[string](query, candidates, limit, idfn, ispath):

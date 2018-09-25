@@ -10,7 +10,11 @@ else:
 
 def scoreMatchesProxy(q, c, limit, key=None, ispath=True):
     if useNative:
-        return scoreMatchesStr(q, c, limit, ispath)
+        idxArr = scoreMatchesStr(q, c, limit, ispath)
+        results = []
+        for i in idxArr:
+            results.append((c[i[0]], i[1]))
+        return results
     else:
         return scoreMatches(q, c, limit, key, ispath)
 
