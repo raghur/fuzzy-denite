@@ -11,8 +11,20 @@ if pkgPath not in sys.path:
     logger.debug("added %s to sys.path" % pkgPath)
     sys.path.insert(0, pkgPath)
 
-from pyfuzzy import scoreMatches
+import pyfuzzy
+useNative = False
 
+
+def scoreMatchesProxy(q, c, limit, key=None, ispath=True):
+    if useNative:
+        import test
+        idxArr = test.scoreMatchesStr(q, [key(d) for d in c], limit, ispath)
+        results = []
+        for i in idxArr:
+            results.append((c[i[0]], i[1]))
+        return results
+    else:
+        return pyfuzzy.scoreMatches(q, c, limit, key, ispath)
 
 class Filter(Base):
 
@@ -21,8 +33,14 @@ class Filter(Base):
 
         self.name = 'matcher/pyfuzzy'
         self.description = 'py fuzzy matcher'
+        self.useNative = False
 
     def filter(self, context):
+        self.useNative = self.vim.api.get_var("pyfuzzy#usenative")
+        if self.useNative > 0:
+            global useNative
+            useNative = True
+        self.debug("usenative: %s" % self.useNative)
         if not context['candidates'] or not context['input']:
             return context['candidates']
         candidates = context['candidates']
@@ -34,8 +52,9 @@ class Filter(Base):
                                                   "directory_mru", "file_old",
                                                   "directory_rec", "buffer"]
         # self.debug("candidates %s %s" % (qry, len(candidates)))
-        results = scoreMatches(qry, candidates, 10, key=lambda x: x['word'],
-                               ispath=ispath)
+        results = scoreMatchesProxy(qry, candidates, 10,
+                                    key=lambda x: x['word'], ispath=ispath)
+        # self.debug("results %s" % results)
         rset = [w[0] for w in results]
         # self.debug("rset %s" % rset)
         return rset
