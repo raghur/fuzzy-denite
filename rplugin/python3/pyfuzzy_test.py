@@ -1,8 +1,9 @@
 import os
+import pytest
 from pyfuzzy import fuzzyMatches, isMatch
 useNative = False
 if os.getenv("FUZZY_CMOD"):
-    from nim_fuzzy import scoreMatchesStr
+    from nim_fuzzy import scoreMatchesStr, baseline
     useNative = True
 else:
     from pyfuzzy import scoreMatches
@@ -22,6 +23,7 @@ def scoreMatchesProxy(q, c, limit, key=None, ispath=True):
 lines = []
 with open("neomru_file") as fh:
     lines = [line.strip() for line in fh.readlines()]
+
 
 
 def test_is_match():
@@ -72,6 +74,15 @@ def test_must_score_camel_case_higher():
 def test_must_score_camel_case_higher1():
     results = list(scoreMatchesProxy("rv", lines, 10, ispath=True))
     assert results[0][0].endswith("RelVer")
+
+
+def test_measure_baseline_native_call(benchmark):
+    if useNative:
+        results = benchmark(lambda: list(baseline(lines)))
+        assert len(results) == len(lines)
+    else:
+        pytest.skip("baseline only measured when using native module")
+
 
 def test_must_prefer_match_at_end(benchmark):
     results = benchmark(lambda: list(scoreMatchesProxy("api", lines, 10, ispath=True)))

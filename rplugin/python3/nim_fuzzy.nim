@@ -260,3 +260,13 @@ proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, i
         idx.inc
     result.setlen(idx)
     return
+
+proc baseline(candidates: openarray[string] ): seq[tuple[i:int, r:int]] {.exportpy.} =
+    result = newSeq[tuple[i:int, r:int]](candidates.len)
+    var idx = 0
+    # for m in fuzzyMatches01(query, candidates, limit, ispath):
+    for m in candidates:
+        result[idx] = (idx, m.len)
+        idx.inc
+    result.setlen(idx)
+    return
