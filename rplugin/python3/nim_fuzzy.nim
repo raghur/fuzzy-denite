@@ -3,10 +3,8 @@ import strutils
 import binaryheap
 import logging
 import strformat
-# import nimprof
 
-let L = newConsoleLogger(levelThreshold = logging.Level.lvlNone)
-# let L = newConsoleLogger(levelThreshold = logging.Level.lvlDebug)
+let L = newConsoleLogger(levelThreshold = logging.Level.lvlDebug)
 addHandler(L)
 const MAXCHARS = 10
 const MAXCHARCOUNT = 10
@@ -67,7 +65,7 @@ proc checkFullMatch(indexArr: MatchIndex, lq: string, pos: int, m: var Match) =
     m.found = true
     for k in 1..lq.high:
         let arrIdx = lq.find(lq[k])
-        l "looking for {q[k]} in {indexArr[arrIdx]}, greater than {start}"
+        l "looking for {lq[k]} in {indexArr[arrIdx]}, greater than {start}"
         let (found, v) = rfirst1(indexArr[arrIdx], greaterThan(start), indexArr[arrIdx][MAXCHARCOUNT] - 1)
         if found:
             l "found at: {v}"
@@ -149,10 +147,10 @@ proc scorer(x: Match, candidate:string, ispath:bool=true): int =
 
     return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
 
-proc walkString(q, c: string, left, right: int): Match =
-    l "Call {query} {left} {right}"
+proc walkString(q, c: string, left, right: int, m: var Match)=
+    l "Call {q} {left} {right}"
     if left > right or right == 0:
-        result.found = false
+        m.found = false
         return
     var orig = c
     var candidate = strutils.toLowerAscii(c)
@@ -161,83 +159,89 @@ proc walkString(q, c: string, left, right: int): Match =
     var pos:int = -1
     var l = left
     var r = right
-    result.positions = newSeq[int](len(q))
     for i, c in query:
-        l "Looking: {i}, {c}, {left}, {right}"
+        l "Looking: {i}, {c}, {l}, {r}"
         if first:
             pos = strutils.rfind(candidate, c, r)
         else:
             pos = strutils.find(candidate, c, l)
         l "Result: {i}, {pos}, {c}"
         if pos == -1:
-            result.found = false
+            m.found = false
             if first:
                 # if the first char was not found anywhere we're done
+                m.positions[0] = 0
                 return 
             else:
                 # otherwise, find the non matching char to the left of the
                 # first char pos. Next search on has to be the left of this
                 # position
-                if result.positions[0] == 0:
-                    result.positions = @[]
+                let np = m.positions[0] - 1
+                if np < 0:
+                    # we've run out - clearly, no match possible
+                    m.positions[0] = 0
                     return
-                var posLeft = strutils.rfind(candidate, c, result.positions[0] - 1)
-                l "posLeft:  {c}, {result.positions[0]}, {posLeft}"
-                if posLeft != -1:
-                    result.positions = @[posLeft]
-                else:
-                    result.positions = @[]
+                var posLeft = strutils.rfind(candidate, c, np)
+                l "posLeft:  {c}, {np}, {posLeft}"
+                m.positions[0] = posLeft
                 return
         else:
             if pos == 0:
-                result.sepScore.inc
-                result.camelCaseScore.inc
+                m.sepScore.inc
+                m.camelCaseScore.inc
             else:
                 var prevChar = orig[pos - 1]
                 if prevChar in sep:
-                    result.sepScore.inc
+                    m.sepScore.inc
                 if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
-                    result.camelCaseScore.inc
-            result.positions[i] = pos
+                    m.camelCaseScore.inc
+            m.positions[i] = pos
             if i == 0:
-                let l = q.len
-                result.clusterScore = -1 * ((pos * l) + (l * (l-1) div 2))
-            result.clusterScore.inc(pos)
+                let qlen = q.len
+                m.clusterScore = -1 * ((pos * qlen) + (qlen * (qlen-1) div 2))
+            m.clusterScore.inc(pos)
             l = pos + 1
             first = false
-    result.found = true
+    m.found = true
     return
 
-proc isMatch(query, candidate: string): Match =
+proc isMatch(query, candidate: string, m: var Match) =
     var didMatch = false
     var r = len(candidate)
     while not didMatch:
-        result = walkString(query, candidate, 0, r)
-        if result.found:
+        walkString(query, candidate, 0, r, m)
+        if m.found:
             break  # all done
-        if len(result.positions) == 0:
-            result.found = false
-            break  # all done too - first char didn't match
-
         # resume search - start looking left from this position onwards
-        r = result.positions[0]
-        if r == 0:
-            result.found = false
+        r = m.positions[0]
+        if r <= 0:
+            m.found = false
             break
     return
+
+proc resetMatch(m: var Match, l:int) = 
+    m.found = false
+    for j in 0 ..< l:
+        m.positions[j] = 0
+    m.clusterScore =0
+    m.sepScore = 0
+    m.camelCaseScore = 0
 
 iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, ispath: bool = true): tuple[i:int, r:int] =
     let findFirstN = true
     var count = 0
+    var mtch:Match
+    mtch.positions = newSeq[int](query.len)
     var heap = newHeap[tuple[i:int, r:int]]() do (a, b: tuple[i:int, r:int]) -> int:
         b.r - a.r
     for i, x in candidates:
         l "processing:  {x}"
-        var res = isMatch(query, x)
-        if res.found:
+        resetMatch(mtch, query.len)
+        isMatch(query, x, mtch)
+        if mtch.found:
             count = count + 1
             l "ADDED: {x}"
-            let rank = scorer(res, x, ispath)
+            let rank = scorer(mtch, x, ispath)
             heap.push((i, rank))
             if findFirstN and count == limit * 5:
                 break

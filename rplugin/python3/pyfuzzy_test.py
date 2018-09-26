@@ -61,7 +61,7 @@ def test_must_find_matches_after_failed_partial_matches():
 
 def test_must_search_case_insensitively():
     results = list(scoreMatchesProxy("ME", lines, 10, ispath=True))
-    assert results[0][0].endswith("Makefile")
+    assert results[0][0].endswith("README.md")
 
 def test_must_score_camel_case_higher():
     c = ["/this/is/fileone.txt", "/this/is/FileOne.txt"]

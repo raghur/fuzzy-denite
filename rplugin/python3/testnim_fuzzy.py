@@ -34,6 +34,11 @@ def run():
         assert results[0][0].endswith("pyfuzzy.py")
         assert results[1][0].endswith("gofuzzy.py")
 
+    results = scoreMatches("ME", lines, 10, True)
+    printResults("ME", results)
+    if check:
+        assert results[0][0].endswith("README.md")
+
     results = scoreMatches("cli", lines, 10, True)
     printResults("cli", results)
     if check:
