@@ -149,70 +149,70 @@ proc scorer(x: Match, candidate:string, ispath:bool=true): int =
 
     return position_boost + end_boost + cluster_boost + sep_boost + camel_boost
 
-proc isMatch(query, candidate: string): Match =
-
-    proc walkString(q, c: string, left, right: int): Match =
-        l "Call {query} {left} {right}"
-        if left > right or right == 0:
-            result.found = false
-            return
-        var orig = c
-        var candidate = strutils.toLowerAscii(c)
-        var query = strutils.toLowerAscii(q)
-        var first = true
-        var pos:int = -1
-        var l = left
-        var r = right
-        result.positions = newSeq[int](len(q))
-        for i, c in query:
-            l "Looking: {i}, {c}, {left}, {right}"
-            if first:
-                pos = strutils.rfind(candidate, c, r)
-            else:
-                pos = strutils.find(candidate, c, l)
-            l "Result: {i}, {pos}, {c}"
-            if pos == -1:
-                result.found = false
-                if first:
-                    # if the first char was not found anywhere we're done
-                    return 
-                else:
-                    # otherwise, find the non matching char to the left of the
-                    # first char pos. Next search on has to be the left of this
-                    # position
-                    if result.positions[0] == 0:
-                        result.positions = @[]
-                        return
-                    var posLeft = strutils.rfind(candidate, c, result.positions[0] - 1)
-                    l "posLeft:  {c}, {result.positions[0]}, {posLeft}"
-                    if posLeft != -1:
-                        result.positions = @[posLeft]
-                    else:
-                        result.positions = @[]
-                    return
-            else:
-                if pos == 0:
-                    result.sepScore = result.sepScore + 1
-                    result.camelCaseScore = result.camelCaseScore + 1
-                else:
-                    var prevChar = orig[pos - 1]
-                    if prevChar in sep:
-                        result.sepScore = result.sepScore + 1
-                    if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
-                        result.camelCaseScore = result.camelCaseScore + 1
-                result.positions[i] = pos
-                if i > 0:
-                    result.clusterScore = result.clusterScore + result.positions[i] - result.positions[i - 1] - 1
-                l = pos + 1
-                first = false
-        result.found = true
+proc walkString(q, c: string, left, right: int): Match =
+    l "Call {query} {left} {right}"
+    if left > right or right == 0:
+        result.found = false
         return
+    var orig = c
+    var candidate = strutils.toLowerAscii(c)
+    var query = strutils.toLowerAscii(q)
+    var first = true
+    var pos:int = -1
+    var l = left
+    var r = right
+    result.positions = newSeq[int](len(q))
+    for i, c in query:
+        l "Looking: {i}, {c}, {left}, {right}"
+        if first:
+            pos = strutils.rfind(candidate, c, r)
+        else:
+            pos = strutils.find(candidate, c, l)
+        l "Result: {i}, {pos}, {c}"
+        if pos == -1:
+            result.found = false
+            if first:
+                # if the first char was not found anywhere we're done
+                return 
+            else:
+                # otherwise, find the non matching char to the left of the
+                # first char pos. Next search on has to be the left of this
+                # position
+                if result.positions[0] == 0:
+                    result.positions = @[]
+                    return
+                var posLeft = strutils.rfind(candidate, c, result.positions[0] - 1)
+                l "posLeft:  {c}, {result.positions[0]}, {posLeft}"
+                if posLeft != -1:
+                    result.positions = @[posLeft]
+                else:
+                    result.positions = @[]
+                return
+        else:
+            if pos == 0:
+                result.sepScore.inc
+                result.camelCaseScore.inc
+            else:
+                var prevChar = orig[pos - 1]
+                if prevChar in sep:
+                    result.sepScore.inc
+                if ord(orig[pos]) < 97 and ord(prevChar) >= 97:
+                    result.camelCaseScore.inc
+            result.positions[i] = pos
+            if i == 0:
+                let l = q.len
+                result.clusterScore = -1 * ((pos * l) + (l * (l-1) div 2))
+            result.clusterScore.inc(pos)
+            l = pos + 1
+            first = false
+    result.found = true
+    return
 
+proc isMatch(query, candidate: string): Match =
     var didMatch = false
-    var l = 0
     var r = len(candidate)
     while not didMatch:
-        result = walkString(query, candidate, l, r)
+        result = walkString(query, candidate, 0, r)
         if result.found:
             break  # all done
         if len(result.positions) == 0:
@@ -231,7 +231,6 @@ iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, i
     var count = 0
     var heap = newHeap[tuple[i:int, r:int]]() do (a, b: tuple[i:int, r:int]) -> int:
         b.r - a.r
-    # var heap = newHeapQueue[Match[T]]()
     for i, x in candidates:
         l "processing:  {x}"
         var res = isMatch(query, x)
@@ -251,8 +250,8 @@ iterator fuzzyMatches(query:string, candidates: openarray[string], limit: int, i
 proc scoreMatchesStr(query: string, candidates: openarray[string], limit: int, ispath:bool=true): seq[tuple[i:int, r:int]] {.exportpy.} =
     result = newSeq[tuple[i:int, r:int]](limit)
     var idx = 0
-    for m in fuzzyMatches01(query, candidates, limit, ispath):
-    # for m in fuzzyMatches(query, candidates, limit, ispath):
+    # for m in fuzzyMatches01(query, candidates, limit, ispath):
+    for m in fuzzyMatches(query, candidates, limit, ispath):
         result[idx] = m
         idx.inc
     result.setlen(idx)
